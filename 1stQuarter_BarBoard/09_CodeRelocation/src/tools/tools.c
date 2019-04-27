@@ -124,7 +124,6 @@ int print_screen(const char * fmt, ...)
 				uart_puts(va_arg(pList, char*));
 				break;
 			default:
-				/* 不考虑%%%%的情况 */
 				uart_putchar(*--pFmt);		/* 不是格式化输出，则输出百分号 */
 				break;
 		}
