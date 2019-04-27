@@ -8,7 +8,7 @@ typedef char * va_list;
 typedef unsigned int uint32;
 typedef unsigned short uint16;
 typedef unsigned char uint8;
-# 33 "./include/tools/tools.h"
+# 39 "./include/tools/tools.h"
 typedef enum{
  GET_STR_WORD = 0,
  GET_STR_LINE = 1,
@@ -177,8 +177,7 @@ int print_screen(const char * fmt, ...)
     break;
    default:
 
-    uart_putchar('%');
-    uart_putchar(*pFmt);
+    uart_putchar(*--pFmt);
     break;
   }
   pFmt++;
