@@ -1,7 +1,6 @@
 #include <led.h>
 #include <uart.h>
 #include <tools.h>
-#include <memCtrl.h>
 #include <log.h>
 #include <soc_s3c2440.h>
 
