@@ -10,4 +10,4 @@ all:
 	#由目标代码反汇编得出标准汇编指令（非伪汇编指令）
 	arm-linux-objdump -D ${FILENAME}.elf > ${FILENAME}.dis
 clean:
-	rm *.bin *.elf *.o
+	rm *.bin *.elf *.o *.dis >> /dev/null
