@@ -1,6 +1,6 @@
 CC := arm-linux-gcc
 #-Tdata 0x10000 
-LD := arm-linux-ld -Ttext 0 -Tdata 0x3000 
+LD := arm-linux-ld -Ttext 0 -Tdata 0x3000
 OBJCOPY := arm-linux-objcopy
 OBJDUMP := arm-linux-objdump
 COPY := cp -u -v -f
