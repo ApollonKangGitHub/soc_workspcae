@@ -6,6 +6,6 @@
 #include "soc_s3c2440_gpio_field.h"
 #include "soc_s3c2440_uart_field.h"
 #include "soc_s3c2440_other_field.h"
-#include "memCtrl.h"
+//#include "memCtrl.h"
 
 #endif

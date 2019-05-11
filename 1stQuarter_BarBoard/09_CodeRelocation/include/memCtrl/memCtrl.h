@@ -54,8 +54,6 @@ typedef enum{
 	
 extern int nor_flash_start_squence_set(uint32 choose);
 extern int nor_flash_init(void);
-
 extern int sdram_init(SDRAM_CTRL_t choose);
-
-
+extern void test_sdram(void);
 #endif

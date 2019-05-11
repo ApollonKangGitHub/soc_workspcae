@@ -1,6 +1,6 @@
 CC := arm-linux-gcc
 #-Tdata 0x10000 
-LD := arm-linux-ld -Ttext 0 -Tdata 0x2500 
+LD := arm-linux-ld -Ttext 0 -Tdata 0x3000 
 OBJCOPY := arm-linux-objcopy
 OBJDUMP := arm-linux-objdump
 COPY := cp -u -v -f
@@ -12,6 +12,7 @@ INCLUDE += -I ./include/led/
 INCLUDE += -I ./include/soc_s3c2440/
 INCLUDE += -I ./include/memCtrl/
 INCLUDE += -I ./include/log/
+INCLUDE += -I ./include/test/
 CFLAGS = $(INCLUDE) 
 
 START = start.o
@@ -22,6 +23,7 @@ OBJS += ./src/led/led.o
 OBJS += ./src/tools/tools.o
 OBJS += ./src/log/syslog.o
 OBJS += ./src/memCtrl/memCtrl.o
+OBJS += ./src/test/test.o
 
 ALLOBJS := $(START)
 #ALLOBJS += $(ASMFILE)
