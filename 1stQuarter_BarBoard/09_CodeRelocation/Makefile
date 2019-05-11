@@ -13,6 +13,14 @@ INCLUDE += -I ./include/soc_s3c2440/
 INCLUDE += -I ./include/memCtrl/
 INCLUDE += -I ./include/log/
 INCLUDE += -I ./include/test/
+#INCLUDE += -T ./include/i2c/
+#INCLUDE += -T ./include/pci/
+#INCLUDE += -T ./include/spi/
+#INCLUDE += -T ./include/lcd/
+#INCLUDE += -T ./include/adc/
+#INCLUDE += -T ./include/mmuCache/
+#INCLUDE += -T ./include/nor/
+#INCLUDE += -T ./include/nand/
 CFLAGS = $(INCLUDE) 
 
 START = start.o
