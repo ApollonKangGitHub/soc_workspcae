@@ -6,6 +6,7 @@ int soc_s3c2440_main(void)
 	uint8 test_choose = TEST_RELOCATION_GREATER_THAN_4K;
 
 	switch(test_choose){
+		#if 0
 		case TEST_LED:
 			led_test();
 			break;
@@ -18,7 +19,6 @@ int soc_s3c2440_main(void)
 		case TEST_SDRAM:
 			test_sdram();
 			break;
-		#if 0
 		case TEST_RELOCATION_LESS_THAN_4K:
 			test_relocation_less_than_4k();
 			break;

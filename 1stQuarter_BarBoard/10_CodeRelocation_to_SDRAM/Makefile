@@ -1,5 +1,11 @@
-CC := arm-linux-gcc
-LD := arm-linux-ld -Ttext 0 -Tdata 0x1000
+CC := arm-linux-gcc -O0
+
+#直接-Tdata 0x30000000重定位到SDRAM是行不通的，
+#因为code段默认从0地址开始，data段和代码段之间就存在一大片未使用的地址
+#大致bin文件达到800多兆
+
+#LD := arm-linux-ld -Ttext 0 -Tdata 0x30000000
+LD := arm-linux-ld -T relocation.lds
 OBJCOPY := arm-linux-objcopy
 OBJDUMP := arm-linux-objdump
 COPY := cp -u -v -f

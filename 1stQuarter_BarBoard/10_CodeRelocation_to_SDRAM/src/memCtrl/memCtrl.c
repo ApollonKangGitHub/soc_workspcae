@@ -138,4 +138,3 @@ int sdram1_init()
 	MRSRB7r = 0x20;
 }
 
-

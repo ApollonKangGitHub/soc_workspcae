@@ -6,12 +6,6 @@
 #include <log.h>
 #include <soc_s3c2440.h>
 
-/*
- * 注意：此处的重定位测试有编译其他模块，bin文件可能大于4K，但是我们没有编写大于4K代码的拷贝指令，
- * 因此，测试全局变量在Nor上写行为时，需要确保其bin文件大小小于4K（修改makefie，确保不编译其他模块，且data段起始地址不宜过大）
- */
-#if 0
-
 void led_test(void)
 {
 	/* 点灯逻辑测试 */
@@ -172,13 +166,46 @@ void test_sdram(void)
 	
 	/* read sdram */
 }
-#endif
 
-char volatile gChar_A = 'A';
+/* 
+ * 注意，在汇编中，lds脚本变量的值可以直接引用，
+ * 而在C中，对lds脚本变量取地址才表示该脚本变量的值，此处的地址并非真正的地址
+ */
+
+extern int data_load;
+extern int data_start;
+extern int data_end;
+
+static char gChar_A = 'A';
 const char gChar_B = 'B';
-void test_relocation_less_than_4k(void)
+static char gChar_C = 'C';
+static char gChar_D = 'D';
+static char gChar_E = 'E';
+
+void test_relocation_greater_than_4k(void)
 {
+	int index = 0;
+	int dataLen = (int)(&data_end) - (int)(&data_start);	
+	volatile uint8 * sdram_base_addr = (volatile uint8 *)(SDRAM_BASE_ADDR);
+	volatile uint8 * data_base_addr = (volatile uint8 *)(&data_load);
+	
 	uart_init();
+	sdram_init(SOC_MEMCTRL_BANK_SDRAM_ALL);
+
+	print_screen("data_load:%x, data_start:%x, data_end:%x, dataLen:%d", 
+		&data_load, &data_start, &data_end, dataLen);
+
+	/* 
+	 * 重定位内存初始化，lds脚本只做了重定位，没有做初始化
+	 * 此时，只有Nor启动可以正常运行，因为Nand还没有多余4K代码的复制操作
+	 */
+	for (index = 0; index < dataLen; index++)
+	{
+		sdram_base_addr[index] = data_base_addr[index];
+
+		print_screen("\r\nsdram_base_addr[%d]:%d, data_base_addr[%d]:%d",
+			index, sdram_base_addr[index], index, data_base_addr[index]);
+	}
 
 	/* 
 	 * 测试Nor启动和Nand启动以及代码重定位
@@ -201,7 +228,9 @@ void test_relocation_less_than_4k(void)
 	 */
 	while(1){
 		/* Nor启动时， gChar_A++ 不起作用，但是如果重定位了数据地址到SDRAM，则可以起作用 */
-		print_screen("%c", gChar_A++);
+		print_screen("\r\ngChar_A:%c(%d), gChar_B:%c(%d), &gChar_A:%x, &gChar_B:%x",
+			gChar_A, gChar_A, gChar_B, gChar_B, &gChar_A, &gChar_B);
+		gChar_A++;
 		tool_dealy(1);
 	}
 }

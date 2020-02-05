@@ -26,6 +26,7 @@ extern void uart_test(void);
 extern void test_led_uart(void);
 extern void test_sdram(void);
 extern void test_relocation_less_than_4k(void);
+extern void test_relocation_greater_than_4k(void);
 void test_dealy(uint16 sec);
 
 #endif /* __TEST_H__ */
