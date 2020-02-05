@@ -6,15 +6,11 @@
 #include <log.h>
 #include <soc_s3c2440.h>
 
-void test_dealy(uint16 sec)
-{
-	int delay = 400000;
-	while(sec--){
-		while(delay--){
-			;/* nop */
-		}
-	}
-}
+/*
+ * 注意：此处的重定位测试有编译其他模块，bin文件可能大于4K，但是我们没有编写大于4K代码的拷贝指令，
+ * 因此，测试全局变量在Nor上写行为时，需要确保其bin文件大小小于4K（修改makefie，确保不编译其他模块，且data段起始地址不宜过大）
+ */
+#if 0
 
 void led_test(void)
 {
@@ -176,17 +172,44 @@ void test_sdram(void)
 	
 	/* read sdram */
 }
+#endif
 
-char gChar_A = 'A';
+/* 
+ * 当不重定位，定义 gChar_A 为 volatile 类型的时候，采用Nor启动也会存在问题，
+ * 但是不属于正常操作，因此不再关心
+ */
+char gChar_A = 'A';	
+
 const char gChar_B = 'B';
-void test_relocation(void)
+void test_relocation_less_than_4k(void)
 {
 	uart_init();
 
-	/* 测试Nor启动和Nand启动以及代码重定位 */
+	/* 
+	 * 测试Nor启动和Nand启动以及代码重定位
+	 * 说明:
+	 * 	SRAM 只有4K 大小，SDRAM、SRAM、NOR Flash 对于CPU可以直接访问，但是Nand Flash不可以
+	 *  SDRAM 首地址为 0x3000,0000
+	 * Nand Flash启动:
+	 * 设置为Nand启动时，SRAM起始地址为0，上电后硬件直接将Nand Flash的bin文件的前
+	 * 4K字节复制到SRAM（0~0x7ff），然后CPU从0地址开始执行，若bin文件大于4K，则前4K
+	 * 的代码就需要做大于4K字节代码的复制工作，复制到SDRAM上，复制完成后重定位CPU指针到
+	 * 复制目的地SDRAM的地址。
+	 * Nor Flash启动：
+	 * 设置为Nor Flash启动时，0地址为Nor Flash的首地址，此时SRAM首地址为0x4000,0000
+	 * 虽然CPU可以直接访问Nor Flash，但是由于Nor只能读不能写，因此存在与Nor上的全局变量/静态变量，
+	 * 不能直接执行写操作，而需要前4K代码将整个Nor上的超过4K的代码复制到SDRAM 上后再执行SDRAM上的代码。
+	 *
+	 * 因此不管是Nand启动的大于4K的代码处理，还是Nor启动的全局/静态变量的处理，都需要借助SDRAM
+	 * 即所谓的代码重定位
+	 *
+	 */
 	while(1){
-		print_screen("%c", gChar_A++);
-		test_dealy(1);
+		/* Nor启动时， gChar_A++ 不起作用，但是如果重定位了数据地址到SDRAM，则可以起作用 */
+		print_screen("\r\ngChar_A:%c(%d), gChar_B:%c(%d), &gChar_A:%x, &gChar_B:%x",
+			gChar_A, gChar_A, gChar_B, gChar_B, &gChar_A, &gChar_B);
+		gChar_A++;
+		tool_dealy(1);
 	}
 }
 

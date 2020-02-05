@@ -1,6 +1,5 @@
 CC := arm-linux-gcc
-#-Tdata 0x10000 
-LD := arm-linux-ld -Ttext 0 -Tdata 0x3000
+LD := arm-linux-ld -Ttext 0 -Tdata 0xe00
 OBJCOPY := arm-linux-objcopy
 OBJDUMP := arm-linux-objdump
 COPY := cp -u -v -f
@@ -19,10 +18,10 @@ START = start.o
 ASMFILE = lib1funcs.o
 OBJS = ./soc_s3c2440.o
 OBJS += ./src/uart/uart.o
-OBJS += ./src/led/led.o
+#OBJS += ./src/led/led.o
 OBJS += ./src/tools/tools.o
-OBJS += ./src/log/syslog.o
-OBJS += ./src/memCtrl/memCtrl.o
+#OBJS += ./src/log/syslog.o
+#OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/test/test.o
 
 ALLOBJS := $(START)
@@ -76,4 +75,8 @@ clean:
 	
 .PHONY:cleanDepend
 cleanDepend:
-	@rm -f $(patsubst %.o,%.d,$(ALLOBJS)) && echo "delete depend files succeed!"
+	@rm -f $(ALLOBJS) && \
+	rm -f $(TARGETP_ROJECT).elf $(TARGETP_ROJECT).dis $(TARGETP_ROJECT).bin && \
+	rm -f $(patsubst %.o,%.i,$(ALLOBJS)) && \
+	echo "delete all module files succeed!"
+	@rm -f $(patsubst %.o,%.d,$(ALLOBJS)) && echo "delete all depend files succeed!"

@@ -8,7 +8,8 @@ typedef enum{
 	TEST_UART,					/* UART测试用例 */
 	TEST_LED_UART,				/* LED和UART复合测试用例 */
 	TEST_SDRAM,					/* SDRAM与UART复合测试用例 */
-	TEST_RELOCATION,			/* 代码重定位测试用例 */
+	TEST_RELOCATION_LESS_THAN_4K,		/* 代码重定位测试用例:小于4K的重定位测试 */
+	TEST_RELOCATION_GREATER_THAN_4K,	/* 代码重定位测试用例:大于4K的重定位测试 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 
@@ -24,7 +25,7 @@ extern void led_test(void);
 extern void uart_test(void);
 extern void test_led_uart(void);
 extern void test_sdram(void);
-extern void test_relocation(void);
+extern void test_relocation_less_than_4k(void);
 void test_dealy(uint16 sec);
 
 #endif /* __TEST_H__ */

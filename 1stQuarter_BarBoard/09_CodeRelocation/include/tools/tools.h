@@ -42,7 +42,7 @@ typedef enum{
 	GET_STR_MAX
 }GET_STRING_FLAG;
 
-
+extern void tool_dealy(uint16 sec);
 extern char * uitoa(uint32 value, char * str);
 extern uint32 atoui(const char * str);
 extern char * uitoxa(uint32 value, char * str);

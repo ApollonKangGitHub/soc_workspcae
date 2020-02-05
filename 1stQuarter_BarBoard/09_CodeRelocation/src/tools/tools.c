@@ -2,6 +2,17 @@
 #include <uart.h>
 #include <log.h>
 
+void tool_dealy(uint16 sec)
+{
+	int delay = 400000;
+	while(sec--){
+		while(delay--){
+			;/* nop */
+		}
+	}
+}
+
+
 /* int整数value转十进制字符串str，并返回字符串首地址，如1235，转成"1235" */
 char * uitoa(uint32 value, char * str)
 {
