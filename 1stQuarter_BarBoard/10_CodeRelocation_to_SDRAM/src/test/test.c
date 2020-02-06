@@ -167,37 +167,44 @@ void test_sdram(void)
 	/* read sdram */
 }
 
-/* 
- * 注意，在汇编中，lds脚本变量的值可以直接引用，
- * 而在C中，对lds脚本变量取地址才表示该脚本变量的值，此处的地址并非真正的地址
- */
-
-extern int data_load;
-extern int data_start;
-extern int data_end;
-
 static char gChar_A = 'A';
 const char gChar_B = 'B';
 static char gChar_C = 'C';
 static char gChar_D = 'D';
 static char gChar_E = 'E';
+static char gChar_F = 0;
+static char gChar_G = 0;
 
 void test_relocation_greater_than_4k(void)
 {
+	
+	/* 
+	 * 注意，在汇编中，lds脚本变量的值可以直接引用，
+	 * 而在C中，对lds脚本变量取地址才表示该脚本变量的值，此处的地址并非真正的地址
+	 */
+	
+	extern int _data_load_;
+	extern int _data_start_;
+	extern int _data_end_;
+	extern int _bss_start_;
+	extern int _bss_end_;
+	
 	int index = 0;
-	int dataLen = (int)(&data_end) - (int)(&data_start);	
+	int dataLen = (int)(&_data_end_) - (int)(&_data_start_);	
+	volatile uint8 * start_addr = (volatile uint8 *)(0x0);
 	volatile uint8 * sdram_base_addr = (volatile uint8 *)(SDRAM_BASE_ADDR);
-	volatile uint8 * data_base_addr = (volatile uint8 *)(&data_load);
+	volatile uint8 * data_base_addr = (volatile uint8 *)(&_data_load_);
 	
 	uart_init();
 	sdram_init(SOC_MEMCTRL_BANK_SDRAM_ALL);
 
-	print_screen("data_load:%x, data_start:%x, data_end:%x, dataLen:%d", 
-		&data_load, &data_start, &data_end, dataLen);
+	print_screen("\r\n _data_load_:%x, _data_start_:%x, _data_end_:%x, dataLen:%d, \r\n _bss_start_:%x, _bss_end_:%x", 
+		&_data_load_, &_data_start_, &_data_end_, dataLen, &_bss_start_, &_bss_end_);
 
 	/* 
-	 * 重定位内存初始化，lds脚本只做了重定位，没有做初始化
+	 * 重定位内存初始化，lds脚本只做了数据段重定位，没有做初始化
 	 * 此时，只有Nor启动可以正常运行，因为Nand还没有多余4K代码的复制操作
+	 * lds脚本语法参照:http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/text/ld.txt
 	 */
 	for (index = 0; index < dataLen; index++)
 	{
@@ -206,6 +213,18 @@ void test_relocation_greater_than_4k(void)
 		print_screen("\r\nsdram_base_addr[%d]:%d, data_base_addr[%d]:%d",
 			index, sdram_base_addr[index], index, data_base_addr[index]);
 	}
+
+	print_screen("\r\nBSS init start, gChar_F:%d, gChar_G:%d", gChar_F, gChar_G);
+
+	/* BSS段初始化为0 */
+	for (index = (int)(&_bss_start_); index < (int)(&_bss_end_); index++)
+	{
+		start_addr[index] = 0;
+
+		print_screen("\r\nstart_addr[%x]:%d", index, start_addr[index]);
+	}
+
+	print_screen("\r\nBSS init end, gChar_F:%d, gChar_G:%d", gChar_F, gChar_G);
 
 	/* 
 	 * 测试Nor启动和Nand启动以及代码重定位

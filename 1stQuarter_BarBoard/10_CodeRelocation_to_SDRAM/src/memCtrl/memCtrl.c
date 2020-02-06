@@ -13,29 +13,29 @@
 
 int nor_flash_init(void)
 {
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor flash!\n\r");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor flash!");
 
 	/* DW0 Indicate data bus width for bank 0 (read only). */
 	/* BWSCONr not use and can't set */
 	if(0x01 == (BWSCONr >> 1) & 0x03){
-		print_screen("Nor flash data width is 16bits!\n\r");
+		print_screen("\n\rNor flash data width is 16bits!");
 	}
 	else if(0x02 == (BWSCONr >> 1) & 0x03){
-		print_screen("Nor flash data width is 32bits!\n\r");
+		print_screen("\n\rNor flash data width is 32bits!");
 	}
 	else{
-		print_screen("Nor flash data width is unavail!\n\r");
+		print_screen("\n\rNor flash data width is unavail!");
 	}
 	/* 设置HCLK=100MHZ时的最小TACC以快速访问 */
 	nor_flash_start_squence_set(MEMCTRL_BANKCON_TACC_CLOCK_8);
 
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor succeed!\n\r");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor succeed!");
 }
 
 /* 设置Nor Flash 的时钟频率/周期，基于HCLK（高速总线时钟） */
 int nor_flash_start_squence_set(uint32 choose)
 {
-	SOC_DEBUG_PRINT(SOC_DBG_NORMAL, "choose is %d\n\r", choose);
+	SOC_DEBUG_PRINT(SOC_DBG_NORMAL, "choose is %d", choose);
 	switch(choose)
 	{
 		case MEMCTRL_BANKCON_TACC_CLOCK_1:	
@@ -62,7 +62,7 @@ int nor_flash_start_squence_set(uint32 choose)
 /* 设置sdram的访问初始化设置，choose为选择的sdram枚举变量 */
 int sdram_init(SDRAM_CTRL_t choose)
 {
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init sdram!\n\r");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init sdram!");
 
 	/* 
      * SDRAM refresh control register
@@ -91,7 +91,7 @@ int sdram_init(SDRAM_CTRL_t choose)
 			break;
 	}
 
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "init sdram succeed!\n\r");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "init sdram succeed!");
 }
 
 int sdram0_init()

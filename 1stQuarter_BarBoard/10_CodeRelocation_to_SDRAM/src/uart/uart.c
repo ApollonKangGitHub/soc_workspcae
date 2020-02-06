@@ -8,6 +8,7 @@
 
 #include <uart.h>
 #include <soc_s3c2440_public.h>
+
 void uart_init()
 {
 	/* 设置多功能引脚用于串口(TXD0/GPH2、RXD0/GPH3) */

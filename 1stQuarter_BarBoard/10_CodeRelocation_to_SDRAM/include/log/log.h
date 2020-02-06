@@ -11,13 +11,13 @@ typedef enum soc_debug_level{
 	SOC_DBG_MAX
 }SOC_DBG_LEV;
 
-#define SOC_DBG_ERR_STR		"Error"
-#define SOC_DBG_WARN_STR 	"Warnning"
-#define SOC_DBG_NOR_STR 	"Debug"
-#define SOC_DBG_LOG_STR 	"Logging"
+#define SOC_DBG_ERR_STR		"ERROR "
+#define SOC_DBG_WARN_STR 	"WARN  "
+#define SOC_DBG_NOR_STR 	"NORMAL"
+#define SOC_DBG_LOG_STR 	"LOG   "
 
 #define SOC_DEBUG_PRINT_LEVEL(lev, format, ...){\
-		print_screen(lev"%%[%s-%d]@ "format, __FUNCTION__, __LINE__, ##__VA_ARGS__);\
+		print_screen("\r\n %%DEBUG-"lev"[%s-%d]# "format, __FUNCTION__, __LINE__, ##__VA_ARGS__);\
 	}
 
 /* 当前就error、warning、normal可能会使用到，后期考虑动态注册，全局标志来控制 */
