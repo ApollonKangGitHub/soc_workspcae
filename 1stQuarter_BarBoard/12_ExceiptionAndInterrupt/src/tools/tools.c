@@ -12,6 +12,30 @@ void tool_dealy(uint16 sec)
 	}
 }
 
+/* 对给定非负数值取整和取余，THUMB指令集专用函数 */
+void tool_getRoundingRemainder
+(
+	int target, 		/* 操作对象整数 */
+	int base,			/* 取余取整基数 */
+	int * round,		/* 取整结果 */
+	int * remain		/* 取余结果 */
+)
+{
+	int high = target;
+	int low = 0;
+	int roundTemp = 0;
+	
+	while (high >= base)
+	{
+		high -= base;
+		roundTemp++;
+	}
+	
+	*round = roundTemp;
+	*remain = high;
+}
+
+
 /* 
  * 大端存储高位存在低字节，低位存在高字节，类似于数据按字符串存储，
  * 比如char str[] = {"123456"}; '1'为高位，但是'1'存在低字节str[0]
@@ -66,8 +90,12 @@ char * tool_itoa(uint32 value, char * str)
 	
 	/* 余数对应的ASCII码依次存放在数组中 */
 	while(high){
+#if (SOC_S3C2440_THUMB_INTERRUPT_TEST == TRUE)
+		(void)tool_getRoundingRemainder(high, 10, &high, &low);
+#else
 		low = high % 10;
 		high = high / 10;
+#endif
 		str[i++] = low + '0';
 	}
 	
@@ -106,10 +134,15 @@ char * tool_ubtoxa(uint8 value, char * str)
 	uint16 temp = 0x0;
 
 	temp |= value;
-	
+
+#if (SOC_S3C2440_THUMB_INTERRUPT_TEST == TRUE)
+	s[0] = base[(temp >> 4) & 0x0FFFFFFF];
+	s[1] = base[temp & 0x0000000F];
+#else
 	s[0] = base[temp / 16];
 	s[1] = base[temp % 16];
-	
+#endif
+		
 	return str;
 }
 
@@ -260,6 +293,7 @@ char * get_string(char * str, uint8 len, GET_STRING_FLAG flag)
 			uart_putchar('\b');		/* 退格准备清除屏幕退格对象 */
 			uart_putchar(32);		/* 清除屏幕退格对象	*/
 			uart_putchar('\b');		/* 再退格，光标回退 */
+			//SOC_DEBUG_PRINT(SOC_DBG_LOG, "i = %d\r\n", i);
 			continue;
 		}
 		else if(('\r' == s[i]) || ('\n' == s[i]) || ((GET_STR_WORD == flag) && (32 == s[i]))){	
