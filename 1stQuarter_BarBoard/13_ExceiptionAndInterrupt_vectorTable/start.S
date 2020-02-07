@@ -153,7 +153,19 @@ soc_s3c2440_prog_init_start:
 	
 	/* relocate memry init */
 	bl relocate_init
-	
+
+change_cpu_mode_to_usr:
+	/* 
+	 * 复位完成之后，CPU处于SVC管理模式，切换到USR模式
+	 * 设置SP_usr即USR模式的栈
+	 */
+	mrs r0, cpsr					/* 读取CPSR */
+	bic r0, r0, #0x3				/* 修改Bits[4:0]=0b'10000,进入USR模式,SVC模式时为0b'10011 */
+	msr cpsr, r0					/* 修改后的结果写回到CPSR */
+
+	ldr sp, =0x34000000				/* 设置SP_usr */
+
+app_start:
 	/* 
 	 * 链接地址赋给PC，跳转到SDRAM中执行，
 	 * thumb指令不能直接给pc赋某个地址，通过R0转换一下
@@ -169,9 +181,20 @@ sdram_start:
 	bl soc_s3c2440_main
 
 /* 未定义指令异常测试 */
-#if (TRUE == SOC_S3C2440_UNDEFINED_INSTRUCTION_TEST)	
+#if (TRUE == SOC_S3C2440_UND_INSTRUCTION_TEST)	
 	/* 构造一条未定义指令, dead code */
 	.word 0xdeadc0de
+	
+/* 软件中断异常测试 */
+#elif (TRUE ==SOC_S3C2440_SWI_INSTRUCTION_TEST )
+	/* 
+	 * CPU软件中断异常模式通过swi指令来进入，
+	 * swi指令紧接着的值可以用来区分服务类型
+	 * swi指令和svc指令其硬编码一致，都是0XEFxxxxxx
+	 */
+	swi 0x1234
+	svc 0x4321
+	.word 0xefabcdef
 #endif
 
 soc_s3c2440_prog_over:
@@ -186,16 +209,16 @@ _halt:
 
 /* 未知异常中断处理 */
 __und_instruction:
-	/* 先设置undefined模式的sp栈（所有模式不公用sp寄存器）*/
+	/* 先设置undefined模式的sp栈 */
 	ldr sp, =0x34000000
 
 	/* 
-	 * 在undefined异常处理时，可能会修改r0-r12，
+	 * 在undefined异常处理时，可能会修改r0-r12，LR_und保存返回地址
 	 * r0-r12、LR_und(r14)先保存下来，stmdb指令先减后存
-	 * LR_und寄存器为被中断模式中下一条指令的寄存器
 	 * LR寄存器区分不同模式，不同模式的LR寄存器物理上不是同一个寄存器
+	 * LR_und寄存器为被中断模式中下一条指令的寄存器
 	 * SPSR_und寄存器保存有被中断模式的CPSR寄存器值
-	 * CPSR寄存器的Bits[4:0]保存有当前CPU模式
+	 * CPSR寄存器的Bits[4:0]保存有当前CPU模式 = 0b'11011
 	 */
 	stmdb sp!, {r0-r12, lr}
 
@@ -218,6 +241,39 @@ und_exception_string:
 @异常处理函数逻辑实现：未定义指令异常
 @================================================================================
 __software_interrupt:	
+	/* 先设置swi软件中断模式(SVC管理模式)的sp栈 */
+	ldr sp, =0x33e00000
+
+	/* 
+	 * 在swi异常处理时，可能会修改r0-r12，LR_svc保存返回地址
+	 * r0-r12、LR_svc(r14)先保存下来，stmdb指令先减后存
+	 * LR_svc 寄存器为被中断模式中下一条指令的寄存器
+	 * SPSR_svc 寄存器保存有被中断模式的CPSR寄存器值
+	 * CPSR寄存器的Bits[4:0]保存有当前CPU模式 = 0b'10011
+	 */
+	stmdb sp!, {r0-r12, lr}
+
+	/* R4寄存器在调用函数时会保存现场，因此借用R4保存lr */
+	mov r4, lr
+
+	/* 处理异常 */
+	mrs r0, cpsr
+	mrs r1, spsr
+	ldr r2, =swi_exception_string
+	bl exception_printException
+
+	/* 获取LR保存的返回地址的上一条指令，即swi指令地址 */
+	sub r0, r4, #4
+	bl exception_printSwiValue
+	
+	/* 恢复现场，ldmia指令先取后加，LR_svc 的赋给 PC */
+	ldmia sp!, {r0-r12, pc}^	/* ^会把SPSR恢复到CPSR里 */
+	
+swi_exception_string:
+	.string "software interrupt exception!"
+
+	@保证string不会破坏四字节对齐（编译器没有对string进行四字节对齐）
+	.align 4	
 
 @================================================================================
 @异常处理函数逻辑实现：终止指令预取

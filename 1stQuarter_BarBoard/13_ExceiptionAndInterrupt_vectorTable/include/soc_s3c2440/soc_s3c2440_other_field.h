@@ -15,4 +15,7 @@
 #define PSR_CPU_MODE_UNDv				(0x1b)
 #define PSR_CPU_MODE_SYSv				(0x1F)
 
+/* SWI指令前缀 */
+#define SWI_INSTRUCTION_PREFIX_MASK		(0xff000000)
+
 #endif

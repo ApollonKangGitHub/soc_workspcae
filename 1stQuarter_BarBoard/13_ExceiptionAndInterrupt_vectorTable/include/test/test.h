@@ -12,6 +12,7 @@ typedef enum{
 	TEST_RELOCATION_GREATER_THAN_4K,	/* 代码重定位测试用例:大于4K的重定位测试 */
 	TEST_THUMB_INSTRUCTION,				/* THUMB指令集测试 */
 	TEST_UDF_INSTRUCTION_EXCEPTION,		/* 未定义指令异常测试 */
+	TEST_SWI_EXCEPTION, 				/* 软件中断异常测试，一般为usr模式切换到软件中断异常模式 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 

@@ -27,11 +27,13 @@ char * exception_cpuModeGet(uint32 psr)
 	return "Unknown";
 }
 
+/* 异常信息打印 */
 void exception_printException(uint32 cpsr, uint32 spsr, char *str)
 {
 	char * pExceptionCpuMod = "Unknown";
 	char * pOriginalCpuMod  = "Unknown";
-	
+
+	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\n Exception!! CPSR:%x, SPSR:%x.", cpsr, spsr);
 	
 	pExceptionCpuMod = exception_cpuModeGet(cpsr);
@@ -40,4 +42,13 @@ void exception_printException(uint32 cpsr, uint32 spsr, char *str)
 	print_screen("\r\nException Mode:%s", pExceptionCpuMod);
 	print_screen("\r\nOriginal  Mode:%s", pOriginalCpuMod);
 	print_screen("\r\n %s", str);
+	print_screen("\r\n---------------------------------------------------------------------------");
 }
+
+/* swi异常类型（值）打印 */
+void exception_printSwiValue(uint32 * swi)
+{
+	uint32 val = *swi & ~SWI_INSTRUCTION_PREFIX_MASK;
+	print_screen("\r\nswi(svc) instruction addr:%x, value is [%x-%x]\r\n", swi, *swi, val);
+}
+
