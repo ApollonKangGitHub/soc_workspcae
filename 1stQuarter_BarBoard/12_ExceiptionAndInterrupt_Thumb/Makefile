@@ -23,7 +23,7 @@ CFLAGS = $(INCLUDE)
 #测试THUMB指令集，C文件编译为thumb指令"-mthumb"，start.S编译为arm指令集
 #THUMB指令的优点是指令长度小，生成bin文件小，但是thumb指令对于/和%的支持不好，
 #并且thumb指令集有时需要arm指令集配合才能实现复杂功能，因此还是默认arm指令编译
-THUMB_TEST = FALSE
+THUMB_TEST = TRUE
 
 ifeq ($(THUMB_TEST), TRUE) 
 	CC += -D SOC_S3C2440_THUMB_INTERRUPT_TEST=TRUE
