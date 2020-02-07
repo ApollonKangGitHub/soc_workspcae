@@ -10,6 +10,7 @@ typedef enum{
 	TEST_SDRAM,					/* SDRAM与UART复合测试用例 */
 	TEST_RELOCATION_LESS_THAN_4K,		/* 代码重定位测试用例:小于4K的重定位测试 */
 	TEST_RELOCATION_GREATER_THAN_4K,	/* 代码重定位测试用例:大于4K的重定位测试 */
+	TEST_THUMB_INTERRUPT,				/* THUMB指令集测试 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 
@@ -27,6 +28,7 @@ extern void test_led_uart(void);
 extern void test_sdram(void);
 extern void test_relocation_less_than_4k(void);
 extern void test_relocation_greater_than_4k(void);
-void test_dealy(uint16 sec);
+extern void test_dealy(uint16 sec);
+extern void test_thumb_interrupt(void);
 
 #endif /* __TEST_H__ */

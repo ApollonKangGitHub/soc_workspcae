@@ -6,13 +6,14 @@ void tool_dealy(uint16 sec)
 {
 	int delay = 400000;
 	while(sec--){
+		delay = 400000;
 		while(delay--){
 			;/* nop */
 		}
 	}
 }
 
-/* 对给定非负数值取整和取余，THUMB指令集专用函数 */
+/* 对给定非负数值取整和取余，THUMB指令集专用函数，效率极其低下 */
 void tool_getRoundingRemainder
 (
 	int target, 		/* 操作对象整数 */

@@ -4,6 +4,10 @@
 int soc_s3c2440_main(void)
 {
 	uint8 test_choose = TEST_RELOCATION_GREATER_THAN_4K;
+	
+#if (TRUE == SOC_S3C2440_THUMB_INTERRUPT_TEST)
+	test_choose = TEST_THUMB_INTERRUPT;
+#endif
 
 	switch(test_choose){
 		#if 0
@@ -11,6 +15,7 @@ int soc_s3c2440_main(void)
 			led_test();
 			break;
 		case TEST_UART:
+			uart_init();
 			uart_test();
 			break;
 		case TEST_LED_UART:
@@ -25,6 +30,9 @@ int soc_s3c2440_main(void)
 		#endif
 		case TEST_RELOCATION_GREATER_THAN_4K:
 			test_relocation_greater_than_4k();
+			break;
+		case TEST_THUMB_INTERRUPT:
+			test_thumb_interrupt();
 			break;
 		default:
 			uart_init();

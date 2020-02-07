@@ -21,16 +21,15 @@ void uart_test(void)
 	char * pStr = NULL;
 	int len = 0;
 	
-	uart_init();
-	len = uart_puts("Hello S3C2440!\r\n");
+	len = uart_puts("\r\nHello S3C2440!");
 	pStr = tool_itoa(len, (char *)(strLen));
-	uart_puts("string len = ");
+	uart_puts("\r\nstring len = ");
 	uart_puts(pStr);
 	uart_puts("\r\n");
 	
-	print_screen("\r\ntest1:%d, test2:%d\r\n", 2147483647, 54552);
-	print_screen("\r\nTest at [%s - %X] %c Please Enter:\r\n", __FUNCTION__, __LINE__, 43);
-	print_screen("\r\nTest at [%s - %X] %X Please Enter:\r\n", __FUNCTION__, __LINE__, 65536);
+	print_screen("\r\ntest1:%d, test2:%d", 100, 0);
+	print_screen("\r\nTest at [%s - %X] %c Please Enter:", __FUNCTION__, __LINE__, 43);
+	print_screen("\r\nTest at [%s - %X] %X Please Enter:", __FUNCTION__, __LINE__, 65536);
 
 	while(1){
 		
@@ -218,12 +217,9 @@ void test_relocation_greater_than_4k(void)
 
 	code_relocation();
 	print_screen("\r\n code relocate init succeed!");
-	print_screen("\r\nSOC_S3C2440_THUMB_INTERRUPT_TEST:%d", SOC_S3C2440_THUMB_INTERRUPT_TEST);
-
+	
 	bss_clear();
 	print_screen("\r\n BSS section init succeed!");
-
-	print_screen("\r\nSOC_S3C2440_THUMB_INTERRUPT_TEST:%d", SOC_S3C2440_THUMB_INTERRUPT_TEST);
 
 	/* 
 	 * 测试Nor启动和Nand启动以及代码重定位
@@ -251,5 +247,22 @@ void test_relocation_greater_than_4k(void)
 		gChar_A++;
 		tool_dealy(1);
 	}
+}
+
+/* thumb指令集测试 */
+void test_thumb_interrupt(void)
+{
+	uart_init();
+	sdram_init(SOC_MEMCTRL_BANK_SDRAM_ALL);	
+	
+	code_relocation();
+	print_screen("\r\n code relocate init succeed!");
+	
+	bss_clear();
+	print_screen("\r\n BSS section init succeed!");
+
+	print_screen("\r\n THUMB interrupt test[%s-%s-%d]!", __FILE__, __FUNCTION__, __LINE__);
+	tool_dealy(2);
+	uart_test();
 }
 
