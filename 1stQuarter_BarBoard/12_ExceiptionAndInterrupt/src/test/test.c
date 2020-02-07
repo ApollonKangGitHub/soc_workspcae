@@ -137,6 +137,7 @@ void test_sdram(void)
 		 * arm-linux-gcc 编译器对'%'和'/'的支持不是很好，
 		 * 在编译阶段取余或取整基数必须是常量（常量宏或整数都可以），
 		 * 否则会报错：undefined reference to `__aeabi_idivmod'
+		 * lib1funcs.S文件有对于这些指令的支持，但是编译器对应版本编译有问题，暂时先不管
 		 */
 		 if(i % SDRAM_PRINT_CYCLE == 0){
 			print_screen("[write sdram <%d MB>, <%d KB>, [%%d]]      \r", 
