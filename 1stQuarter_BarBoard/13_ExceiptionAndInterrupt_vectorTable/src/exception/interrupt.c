@@ -1,3 +1,11 @@
+/*
+ * FileName：interrupt.c
+ * Description:用于控制中断处理
+ * Time：2020年2月7日23:45:19
+ * Author：Kangruojin
+ * Version：V1.0
+*/
+
 #include <interrupt.h>
 #include <tools.h>
 #include <soc_s3c2440_public.h>

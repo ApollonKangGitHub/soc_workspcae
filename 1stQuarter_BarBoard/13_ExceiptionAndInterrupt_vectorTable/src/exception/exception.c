@@ -1,3 +1,11 @@
+/*
+ * exception.c
+ * Description:用于控制异常处理
+ * Time：2020年2月7日23:45:19
+ * Author：Kangruojin
+ * Version：V1.0
+*/
+
 #include <exception.h>
 #include <tools.h>
 #include <soc_s3c2440_public.h>
