@@ -256,5 +256,7 @@ void test_ext_interrupt(void)
 	/* 中断控制器和按键中断源初始化设置 */
 	interrupt_controller_init();	/* 中断控制器初始化 */
 	interrupt_key_init();			/* 按键中断初始化 */
+
+	print_screen("\r\n external interrupt for key succceed!!");
 }
 

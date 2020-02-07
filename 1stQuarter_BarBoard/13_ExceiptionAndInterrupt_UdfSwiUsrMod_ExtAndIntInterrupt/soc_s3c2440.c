@@ -21,7 +21,7 @@ static char *gTestObjStr[] = {
 	
 int soc_s3c2440_main(void)
 {
-	uint8 test_choose = TEST_RELOCATION_GREATER_THAN_4K;
+	uint8 test_choose = TEST_EXT_INTERRUPT;
 	
 #if (TRUE == SOC_S3C2440_THUMB_INSTRUCTION_TEST)
 	test_choose = TEST_THUMB_INSTRUCTION;
