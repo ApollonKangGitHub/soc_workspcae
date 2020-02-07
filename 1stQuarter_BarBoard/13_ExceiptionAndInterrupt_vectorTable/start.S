@@ -157,17 +157,18 @@ soc_s3c2440_prog_init_start:
 change_cpu_mode_to_usr:
 	/* 
 	 * 复位完成之后，CPU处于SVC管理模式，切换到USR模式
-	 * 设置SP_usr即USR模式的栈
+	 * 使能中断，并设置SP_usr即USR模式的栈
 	 */
 	mrs r0, cpsr					/* 读取CPSR */
 	bic r0, r0, #0x3				/* 修改Bits[4:0]=0b'10000,进入USR模式,SVC模式时为0b'10011 */
+	bic r0, r0, #(0x1 << 7)			/* 清除CPSR的IRQ disable位(Bit7)，以打开CPU的中断响应 */
 	msr cpsr, r0					/* 修改后的结果写回到CPSR */
 
 	ldr sp, =0x34000000				/* 设置SP_usr */
 
 app_start:
 	/* 
-	 * 链接地址赋给PC，跳转到SDRAM中执行，
+	 * 链接地址赋给PC，跳转到SDRAM中执行(不要用bl sdram_start)，
 	 * thumb指令不能直接给pc赋某个地址，通过R0转换一下
 	 */
 	ldr r0, =sdram_start
@@ -196,7 +197,7 @@ sdram_start:
 	svc 0x4321
 	.word 0xefabcdef
 #endif
-
+	
 soc_s3c2440_prog_over:
 	bl soc_s3c2440_over
 
@@ -216,8 +217,8 @@ __und_instruction:
 	 * 在undefined异常处理时，可能会修改r0-r12，LR_und保存返回地址
 	 * r0-r12、LR_und(r14)先保存下来，stmdb指令先减后存
 	 * LR寄存器区分不同模式，不同模式的LR寄存器物理上不是同一个寄存器
-	 * LR_und寄存器为被中断模式中下一条指令的寄存器
-	 * SPSR_und寄存器保存有被中断模式的CPSR寄存器值
+	 * LR_und 寄存器保存被中断模式中下一条指令地址
+	 * SPSR_und 寄存器保存有被中断模式的CPSR寄存器值
 	 * CPSR寄存器的Bits[4:0]保存有当前CPU模式 = 0b'11011
 	 */
 	stmdb sp!, {r0-r12, lr}
@@ -247,7 +248,7 @@ __software_interrupt:
 	/* 
 	 * 在swi异常处理时，可能会修改r0-r12，LR_svc保存返回地址
 	 * r0-r12、LR_svc(r14)先保存下来，stmdb指令先减后存
-	 * LR_svc 寄存器为被中断模式中下一条指令的寄存器
+	 * LR_svc 寄存器保存被中断模式中下一条指令地址
 	 * SPSR_svc 寄存器保存有被中断模式的CPSR寄存器值
 	 * CPSR寄存器的Bits[4:0]保存有当前CPU模式 = 0b'10011
 	 */

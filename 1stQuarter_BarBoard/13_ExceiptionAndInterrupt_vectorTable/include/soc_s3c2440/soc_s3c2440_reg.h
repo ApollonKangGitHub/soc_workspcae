@@ -133,4 +133,35 @@
 #define GPHRESRVEDr			__REG_VALUE(ADDR_GPHRESRVEDr)		/* Reserved  */
 /* ################################################################################################################################## */
 
+/* ################################################# INterrupt register ####################################################### */
+#define ADDR_EXTINT0r			(0x56000088)
+#define ADDR_EXTINT1r			(0x5600008C)
+#define ADDR_EXTINT2r			(0x56000090)
+
+#define ADDR_EINTMASKr			(0x560000A4)
+#define ADDR_EINTPENDr			(0x560000A8)
+
+#define ADDR_SRCPNDr			(0x4A000000)
+#define ADDR_INTMASKr			(0x4A000008)
+#define ADDR_PRIORITYr			(04A000000C)
+#define ADDR_INTPNDr			(0x4A000010)
+#define ADDR_INTOFFSETr			(0x4A000014)
+
+
+#define EXTINT0r				__REG_VALUE(ADDR_EXTINT0r)			/* External interrupt control register 0 */
+#define EXTINT1r				__REG_VALUE(ADDR_EXTINT1r)			/* External interrupt control register 1 */
+#define EXTINT2r				__REG_VALUE(ADDR_EXTINT2r)			/* External interrupt control register 2 */
+
+#define EINTMASKr				__REG_VALUE(ADDR_EINTMASKr)			/* External Interrupt Mask Register */
+#define EINTPENDr				__REG_VALUE(ADDR_EINTPENDr)			/* External interrupt pending register */
+
+#define SRCPNDr					__REG_VALUE(ADDR_SRCPNDr)			/* Indicate the interrupt request status.Reset Value:0x00000000 */
+#define INTMASKr				__REG_VALUE(ADDR_INTMASKr)			/* Determine which interrupt source is masked.Reset Value:0xFFFFFFFF */
+#define PRIORITYr				__REG_VALUE(ADDR_PRIORITYr)			/* IRQ priority control register */
+#define INTPNDr					__REG_VALUE(ADDR_INTPNDr)			/* Indicate the interrupt request status */
+#define INTOFFSETr				__REG_VALUE(ADDR_INTOFFSETr)		/* Indicate the IRQ interrupt request source */
+
+/* ################################################################################################################################## */
+
+
 #endif /* _SOC_S3C2440_REG_H_ */

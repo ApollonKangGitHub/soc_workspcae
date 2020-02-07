@@ -250,3 +250,11 @@ void test_thumb_instruction(void)
 	test_uart();
 }
 
+/* 外部按键中断测试 */
+void test_ext_interrupt(void)
+{
+	/* 中断控制器和按键中断源初始化设置 */
+	interrupt_controller_init();	/* 中断控制器初始化 */
+	interrupt_key_init();			/* 按键中断初始化 */
+}
+

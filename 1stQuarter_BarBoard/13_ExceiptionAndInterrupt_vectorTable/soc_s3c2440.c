@@ -14,6 +14,8 @@ static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_THUMB_INSTRUCTION),
 	ENUM_TYPE_TO_STR(TEST_UDF_INSTRUCTION_EXCEPTION),
 	ENUM_TYPE_TO_STR(TEST_SWI_EXCEPTION),
+	ENUM_TYPE_TO_STR(TEST_EXT_INTERRUPT),
+	ENUM_TYPE_TO_STR(TEST_INT_INTERRUPT),
 	ENUM_TYPE_TO_STR(TEST_MAX)
 };
 	
@@ -61,6 +63,8 @@ int soc_s3c2440_main(void)
 		case TEST_SWI_EXCEPTION:
 			print_screen("\r\ncpu mode change and exceptinon test...");
 			break;
+		case TEST_EXT_INTERRUPT:
+			test_ext_interrupt();
 		default:
 			print_screen("\r\nNo have to test operation!");
 			break;

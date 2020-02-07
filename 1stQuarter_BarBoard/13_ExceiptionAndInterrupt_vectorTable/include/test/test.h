@@ -13,6 +13,8 @@ typedef enum{
 	TEST_THUMB_INSTRUCTION,				/* THUMB指令集测试 */
 	TEST_UDF_INSTRUCTION_EXCEPTION,		/* 未定义指令异常测试 */
 	TEST_SWI_EXCEPTION, 				/* 软件中断异常测试，一般为usr模式切换到软件中断异常模式 */
+	TEST_EXT_INTERRUPT,					/* 外部中断测试 */
+	TEST_INT_INTERRUPT,					/* 内部中断测试 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 
@@ -32,5 +34,6 @@ extern void test_relocation_less_than_4k(void);
 extern void test_relocation_greater_than_4k(void);
 extern void test_dealy(uint16 sec);
 extern void test_thumb_instruction(void);
+extern void test_ext_interrupt(void);
 
 #endif /* __TEST_H__ */

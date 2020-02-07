@@ -61,6 +61,7 @@ OBJS += ./src/log/syslog.o
 OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/test/test.o
 OBJS += ./src/exception/exception.o
+OBJS += ./src/exception/interrupt.o
 
 ALLOBJS := $(START)
 ALLOBJS += $(ASMFILE)
