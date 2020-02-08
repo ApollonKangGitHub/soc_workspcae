@@ -1,7 +1,7 @@
 /*
  * FileName：interrupt.c
  * Description:用于控制中断处理
- * Time：2020年2月7日23:45:19
+ * Time：2020年2月8日18:33:55
  * Author：Kangruojin
  * Version：V1.0
 */
@@ -12,6 +12,12 @@
 #include <soc_s3c2440_public.h>
 
 #define INTERRUPT_TYPE_ENUM_STR(intName)	#intName
+#define INTERRUPT_HANLE_FUNCTION_NULL_RETURN(intType) \
+	do { \
+		print_screen("\r\nNo have deal function for interrupt %s[%d]", \
+			gInterruptTypeStr[intType], intType); \
+		return -1; \
+	} while(0)
 
 static char * gInterruptTypeStr[INTERRUPT_TYPE(MAX) + 1] = {
 	/* 外部中断 */
@@ -399,13 +405,6 @@ BOOL interrupt_status_get
 
 int  interrupt_handle(interrupt_type_t type)
 {
-#define INTERRUPT_HANLE_FUNCTION_NULL_RETURN(intType) \
-	do { \
-		print_screen("\r\nNo have deal function for interrupt %s[%d]", \
-			gInterruptTypeStr[intType], intType); \
-		return -1; \
-	} while(0)
-
 	switch (type) {
 		case INTERRUPT_TYPE(EXT_INT0):
 			return interrupt_handle_ext_int0();
@@ -498,12 +497,7 @@ void interrupt_status_clear(interrupt_type_t type)
 		"clear start SRCPNDr-INTPNDr-EINTPENDr:%x-%x-%x", 
 		SRCPNDr, INTPNDr, EINTPENDr);
 	
-	if ((type >= INTERRUPT_TYPE(EXT_INT4)) 
-		&& (type <= INTERRUPT_TYPE(EXT_INT23)))
-	{
-		EINTPENDr = eintpend;
-	}
-
+	EINTPENDr = eintpend;
 	SRCPNDr = srcpnd;
 	INTPNDr = intpnd;
 
@@ -516,7 +510,8 @@ void interrupt_status_clear(interrupt_type_t type)
 void interrupt_irq_deal_start(void)
 {
 	interrupt_type_t intType;
-	
+	uint32 intValue = INTPNDr;
+
 	/* 分辨中断源 */
 	(void)interrupt_status_get(INTERRUPT_TYPE(MAX), &intType);
 
@@ -524,9 +519,9 @@ void interrupt_irq_deal_start(void)
 	{
 		/* 根据中断源调用对应处理函数 */
 		(void)interrupt_handle(intType);
-		
-		/* 清除中断 */
-		(void)interrupt_status_clear(intType);
 	}
+
+	/* 清除中断 */
+	(void)interrupt_status_clear(intType);
 }
 
