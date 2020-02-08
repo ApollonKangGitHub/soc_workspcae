@@ -14,8 +14,8 @@ static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_THUMB_INSTRUCTION),
 	ENUM_TYPE_TO_STR(TEST_UDF_INSTRUCTION_EXCEPTION),
 	ENUM_TYPE_TO_STR(TEST_SWI_EXCEPTION),
-	ENUM_TYPE_TO_STR(TEST_EXT_INTERRUPT),
-	ENUM_TYPE_TO_STR(TEST_INT_INTERRUPT),
+	ENUM_TYPE_TO_STR(TEST_EXT_KEY_INTERRUPT),
+	ENUM_TYPE_TO_STR(TEST_INT_TIMER_INTERRUPT),
 	ENUM_TYPE_TO_STR(TEST_MAX)
 };
 	
@@ -31,7 +31,7 @@ int soc_s3c2440_main(void)
 	test_choose = TEST_SWI_EXCEPTION;
 #endif
 
-	test_choose = TEST_EXT_INTERRUPT;
+	test_choose = TEST_INT_TIMER_INTERRUPT;
 
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
@@ -65,14 +65,24 @@ int soc_s3c2440_main(void)
 		case TEST_SWI_EXCEPTION:
 			print_screen("\r\nCpu mode change and exceptinon test...");
 			break;
-		case TEST_EXT_INTERRUPT:
-			interrupt_init();
-			print_screen("\r\nPress key to occour interrupt!");
+		case TEST_EXT_KEY_INTERRUPT:
+			test_interrupt_ext_key_init();
+			print_screen("\r\nPress key to occour key interrupt!");
+			break;
+		case TEST_INT_TIMER_INTERRUPT:
+			test_interrupt_ext_key_init();
+			test_interrupt_int_timer_init();
+			print_screen("\r\nExternal key interrupt and internal timer interrupt init succeed!");
+			while(TRUE) {
+				timer_0_debug_print();
+				tool_dealy(2);
+			}
 			break;
 		default:
 			print_screen("\r\nNo have to test operation!");
 			break;
 	}
+	
 	return 0;
 }
 

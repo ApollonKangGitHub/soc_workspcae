@@ -5,6 +5,7 @@
 #include <memCtrl.h>
 #include <log.h>
 #include <interrupt.h>
+#include <timer.h>
 #include <soc_s3c2440.h>
 #include <soc_s3c2440_public.h>
 
@@ -286,43 +287,40 @@ void test_thumb_instruction(void)
 
 #ifdef TEST_OBJ_INTERRUPT
 
-/*
- * 1、SRCPND[R/W] 属于中断控制器的一部分，用来指示哪个中断产生了(值为1)，处理后清除对应位
- * 由SRCPND可以判定EINT0~EINT3，大于EINT3的中断需要EINTPEND进一步判定
- * 
- * 2、INTMASK[R/W] 寄存器也是中断控制器的一部分，和中断源的EINTMASK 寄存器类似(1表示屏蔽)，
- * INTMASK 用来在中断控制器上屏蔽中断，EINTMASK用来在中断源处屏蔽中断
- * 
- * 3、INTPND[R/W] 用来指示哪个中断正在被CPU处理
- * 4、INTOFFSET[RO] 用来指示INTPND中哪一位被设置为1，
- * 	  如EINT4~EINT7正在被处理(bit4=1)，则INTOFFSET=4，而INTPND=2^4=16
- *    INTOFFSET为只读的，当INTPND被清除时，INTOFFSET会自动同步
- * 
- * EINTPEND 寄存器和 EINTMASK寄存器都不控制EINT0~EINT3，
- * EINT4~EINT23T都单独有一个控制bit
- *
- * SRCPND 寄存器、 INTPND 和 INTMASK寄存器对于EINT0~EINT3单独控制，
- * EINT4~EINT7、EINT8~EINT23T公用一个控制bit:
- * bit0~bit3分别对应EINT0~EINT3
- * bit4由EINT4~EINT7公用
- * bit5由EINT8~EINT23公用
- */
-
-/* 中断控制器初始化 */
-void test_interrupt_controller_init(void)
+/* debug开关测试 */
+void * test_interrupt_handle_key_s2(void * pArgv)
 {
-	volatile uint32 regValue = 0x0;
-
-	/* 在中断控制器处使能S2~S4按键中断 */
-	regValue = INTMASKr;
-	
-	regValue &= ~(EINT0_BITSf | EINT2_BITSf | EINT8_23_BITSf);
-	regValue |= (INTMASK_INT_ENABLE << EINT0_START_BIT);
-	regValue |= (INTMASK_INT_ENABLE << EINT2_START_BIT);
-	regValue |= (INTMASK_INT_ENABLE << EINT8_23_START_BIT);
-
-	INTMASKr = regValue;
+	print_screen("\r\n ----  key_s2[debug switch]!  ----");
+	gSysDebugFlag = !gSysDebugFlag;
+	print_screen("\r\n gSysDebugFlag:%d", gSysDebugFlag);
+	return;
 }
+
+void * test_interrupt_handle_key_s3(void * pArgv)
+{
+	print_screen("\r\n ----  key_s3!  ----");
+	return;
+}
+
+void * test_interrupt_handle_key_s4(void * pArgv)
+{
+	print_screen("\r\n ----  key_s4!  ----");
+	return;
+}
+
+void * test_interrupt_handle_key_s5(void * pArgv)
+{
+	print_screen("\r\n ----  key_s5!  ----");
+	return;
+}
+
+void * test_interrupt_handle_timer0(void * pArgv)
+{
+	static volatile int times = 0;
+	print_screen("\r\n ----  timer0 counter:%d!  ----", times++);
+	return;
+}
+
 
 /* 按键中断初始化，全部设置为上升沿下降沿双触发 */
 void  test_interrupt_key_init(void)
@@ -342,120 +340,44 @@ void  test_interrupt_key_init(void)
 	GPFCONr |= (GPFCON_EINT << GPIOCON_PIN2_START_BIT);
 	GPGCONr |= (GPGCON_EINT << GPIOCON_PIN3_START_BIT);
 	GPGCONr |= (GPGCON_EINT << GPIOCON_PIN11_START_BIT);
-	
-	/* 2、设置中断触发方式：双边沿触发 */
-	EXTINT0r &= ~(EXTINT0_CON_EINT0_BITSf | EXTINT0_CON_EINT2_BITSf);
-	EXTINT1r &= ~EXTINT1_CON_EINT11_BITSf;
-	EXTINT2r &= ~EXTINT2_CON_EINT19_BITSf;
-	
-	EXTINT0r |= (EXTINT_CON_FALL_EDGE_TRIGGER << EXTINT0_CON_EINT0_START_BIT);	/* s2下降沿触发中断 */
-	EXTINT0r |= (EXTINT_CON_FALL_EDGE_TRIGGER << EXTINT0_CON_EINT2_START_BIT);	/* s3下降沿触发中断 */
-	EXTINT1r |= (EXTINT_CON_FALL_EDGE_TRIGGER << EXTINT1_CON_EINT11_START_BIT);	/* s4下降沿触发中断 */
-	EXTINT2r |= (EXTINT_CON_FALL_EDGE_TRIGGER << EXTINT2_CON_EINT19_START_BIT);	/* s5下降沿触发中断 */
 
-	/* 3、设置EINTMASK使能中断 */
-	EINTMASKr &= ~(EINTMASK_EINT11_BITSf | EINTMASK_EINT19_BITSf);
+	/* s2下降沿触发中断 */
+	SOC_S3C2440_REG_BITS_SET(EXTINT0r, \
+		EXTINT0_CON_EINT0_START_BIT, EXTINT0_CON_EINT0_BITSf, EXTINT_CON_FALL_EDGE_TRIGGER);
+	/* s3下降沿触发中断 */
+	SOC_S3C2440_REG_BITS_SET(EXTINT0r, \
+		EXTINT0_CON_EINT2_START_BIT, EXTINT0_CON_EINT2_BITSf, EXTINT_CON_FALL_EDGE_TRIGGER);
+	/* s4下降沿触发中断 */
+	SOC_S3C2440_REG_BITS_SET(EXTINT1r, \
+		EXTINT1_CON_EINT11_START_BIT, EXTINT1_CON_EINT11_BITSf, EXTINT_CON_FALL_EDGE_TRIGGER);
+	/* s5下降沿触发中断 */
+	SOC_S3C2440_REG_BITS_SET(EXTINT2r, \
+		EXTINT2_CON_EINT19_START_BIT, EXTINT2_CON_EINT19_BITSf, EXTINT_CON_FALL_EDGE_TRIGGER);
 	
-	EINTMASKr |= (EINTMASK_EINT_ENABLE << EINTMASK_EINT11_START_BIT);
-	EINTMASKr |= (EINTMASK_EINT_ENABLE << EINTMASK_EINT19_START_BIT);
+	/* 3、设置EINTMASK使能中断 */
+	SOC_S3C2440_REG_BIT_SET(EINTMASKr, EINTMASK_EINT11_START_BIT, INTMASK_INT_ENABLE);
+	SOC_S3C2440_REG_BIT_SET(EINTMASKr, EINTMASK_EINT19_START_BIT, INTMASK_INT_ENABLE);
 }
 
-/* 中断初始化 */
-void test_interrupt_init(void)
+/* 外部按键中断初始化 */
+void test_interrupt_ext_key_init(void)
 {
 	test_interrupt_key_init();
-	test_interrupt_controller_init();
+
+	/* 注册回调函数，使能中断控制器 */
+	interrupt_register(interrupt_type_EXT_INT0, test_interrupt_handle_key_s2);
+	interrupt_register(interrupt_type_EXT_INT2, test_interrupt_handle_key_s3);
+	interrupt_register(interrupt_type_EXT_INT11, test_interrupt_handle_key_s4);
+	interrupt_register(interrupt_type_EXT_INT19, test_interrupt_handle_key_s5);
 }
 
-/* debug开关测试 */
-void test_interrupt_handle_key_s2(void)
+/* 内部定时器中断初始化 */
+void test_interrupt_int_timer_init(void)
 {
-	print_screen("\r\n ----  key_s2[debug switch]!  ----");
-	gSysDebugFlag = !gSysDebugFlag;
-	print_screen("\r\n gSysDebugFlag:%d", gSysDebugFlag);
-	return;
+	timer_0_init();
+
+	/* 注册回调函数，使能中断控制器 */
+	interrupt_register(interrupt_type_INT_TIMER0, test_interrupt_handle_timer0);
 }
 
-void test_interrupt_handle_key_s3(void)
-{
-	print_screen("\r\n ----  key_s3!  ----");
-	return;
-}
-
-void test_interrupt_handle_key_s4(void)
-{
-	print_screen("\r\n ----  key_s4!  ----");
-	return;
-}
-
-void test_interrupt_handle_key_s5(void)
-{
-	print_screen("\r\n ----  key_s5!  ----");
-	return;
-}
-
-interrupt_drv_t gSocTest_InterruptHandleDrv = {
-		/* 中断驱动描述		*/
-		"SOC S342440 interruppt TEST drviver",	/* .pDrvDesciption;  */
-	
-		/* 中断初始化 */
-		test_interrupt_init,					/* .interrupt_init; */
-	
-		/* 外部中断 */
-		test_interrupt_handle_key_s2,			/* .interrupt_handle_EXT_INT0 */
-		NULL,									/* .interrupt_handle_EXT_INT1 */
-		test_interrupt_handle_key_s3,			/* .interrupt_handle_EXT_INT2 */
-		NULL,									/* .interrupt_handle_EXT_INT3 */
-		NULL,									/* .interrupt_handle_EXT_INT4 */
-		NULL,									/* .interrupt_handle_EXT_INT5 */
-		NULL,									/* .interrupt_handle_EXT_INT6 */
-		NULL,									/* .interrupt_handle_EXT_INT7 */
-		NULL,									/* .interrupt_handle_EXT_INT8 */
-		NULL,									/* .interrupt_handle_EXT_INT9 */
-		NULL,									/* .interrupt_handle_EXT_INT10 */
-		test_interrupt_handle_key_s4,			/* .interrupt_handle_EXT_INT11 */
-		NULL,									/* .interrupt_handle_EXT_INT12 */
-		NULL,									/* .interrupt_handle_EXT_INT13 */
-		NULL,									/* .interrupt_handle_EXT_INT14 */
-		NULL,									/* .interrupt_handle_EXT_INT15 */
-		NULL,									/* .interrupt_handle_EXT_INT16 */
-		NULL,									/* .interrupt_handle_EXT_INT17 */
-		NULL,									/* .interrupt_handle_EXT_INT18 */
-		test_interrupt_handle_key_s5,			/* .interrupt_handle_EXT_INT19 */
-		NULL,									/* .interrupt_handle_EXT_INT20 */
-		NULL,									/* .interrupt_handle_EXT_INT21 */
-		NULL,									/* .interrupt_handle_EXT_INT22 */
-		NULL,									/* .interrupt_handle_EXT_INT23 */
-	
-		/* 内部中断 */
-		NULL,									/* .interrupt_handle_INT_CAM */
-		NULL,									/* .interrupt_handle_INT_nBATT_FLT */
-		NULL,									/* .interrupt_handle_INT_TICK */
-		NULL,									/* .interrupt_handle_INT_WDT_AC97 */
-		NULL,									/* .interrupt_handle_INT_TIMER0 */
-		NULL,									/* .interrupt_handle_INT_TIMER1 */
-		NULL,									/* .interrupt_handle_INT_TIMER2 */
-		NULL,									/* .interrupt_handle_INT_TIMER3 */
-		NULL,									/* .interrupt_handle_INT_TIMER4 */
-		NULL,									/* .interrupt_handle_INT_UART2 */
-		NULL,									/* .interrupt_handle_INT_LCD */
-		NULL,									/* .interrupt_handle_INT_DMA0 */
-		NULL,									/* .interrupt_handle_INT_DMA1 */
-		NULL,									/* .interrupt_handle_INT_DMA2 */
-		NULL,									/* .interrupt_handle_INT_DMA3 */
-		NULL,									/* .interrupt_handle_INT_SDI */
-		NULL,									/* .interrupt_handle_INT_SPI0 */
-		NULL,									/* .interrupt_handle_INT_UART1 */
-		NULL,									/* .interrupt_handle_INT_NFCON */
-		NULL,									/* .interrupt_handle_INT_USBD */
-		NULL,									/* .interrupt_handle_INT_USBH */
-		NULL,									/* .interrupt_handle_INT_IIC */
-		NULL,									/* .interrupt_handle_INT_UART0 */
-		NULL,									/* .interrupt_handle_INT_SPI1 */
-		NULL,									/* .interrupt_handle_INT_RTC */
-		NULL,									/* .interrupt_handle_INT_ADC */
-	
-		/* last and NULL please */
-		NULL,									/* .interrupt_handle_MAX  */
-};
 #endif

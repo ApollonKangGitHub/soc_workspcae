@@ -322,7 +322,7 @@ __interrupt_request:
 	MRS R0, CPSR
 	MRS R1, SPSR
 	LDR R2, =irq_exception_string
-	BL exception_printException
+	/* BL exception_printException */
 	BL interrupt_irq_deal_start
 
 	/* 恢复现场，LDMIA指令先取后加，LR_irq 的赋给 PC */

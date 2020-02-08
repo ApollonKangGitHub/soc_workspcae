@@ -17,6 +17,7 @@ INCLUDE += -I ./include/led/
 INCLUDE += -I ./include/soc_s3c2440/
 INCLUDE += -I ./include/memCtrl/
 INCLUDE += -I ./include/exception/
+INCLUDE += -I ./include/timer/
 INCLUDE += -I ./include/log/
 INCLUDE += -I ./include/test/
 
@@ -62,6 +63,7 @@ OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/test/test.o
 OBJS += ./src/exception/exception.o
 OBJS += ./src/exception/interrupt.o
+OBJS += ./src/timer/timer.o
 
 ALLOBJS := $(START)
 ALLOBJS += $(ASMFILE)

@@ -164,4 +164,58 @@
 /* ################################################################################################################################## */
 
 
+/* ################################################# Timer register ####################################################### */
+
+#define ADDR_TCFG0r				(0x51000000)
+#define ADDR_TCFG1r				(0x51000004)
+#define ADDR_TCONr				(0x51000008)
+
+#define ADDR_TCNTB0r			(0x5100000C)
+#define ADDR_TCMPB0r			(0x51000010)
+#define ADDR_TCNTO0r			(0x51000014)
+
+#define ADDR_TCNTB1r			(0x51000018)
+#define ADDR_TCMPB1r			(0x5100001C)
+#define ADDR_TCNTO1r			(0x51000020)
+
+#define ADDR_TCNTB2r			(0x51000024)
+#define ADDR_TCMPB2r			(0x51000028)
+#define ADDR_TCNTO2r			(0x5100002C)
+
+#define ADDR_TCNTB3r			(0x51000030)
+#define ADDR_TCMPB3r			(0x51000034)
+#define ADDR_TCNTO3r			(0x51000038)
+
+#define ADDR_TCNTB4r			(0x5100003C)
+#define ADDR_TCNTO4r			(0x51000040)
+
+
+#define TCFG0r					__REG_VALUE(ADDR_TCFG0r)			/* Configures the two 8-bit prescalers */
+#define TCFG1r					__REG_VALUE(ADDR_TCFG1r)			/* 5-MUX & DMA mode selection register */
+#define TCONr					__REG_VALUE(ADDR_TCONr)				/* Timer control register */
+
+#define TCNTB0r					__REG_VALUE(ADDR_TCNTB0r)			/* Timer 0 count buffer register */
+#define TCMPB0r					__REG_VALUE(ADDR_TCMPB0r)			/* Timer 0 compare buffer register */
+#define TCNTO0r					__REG_VALUE(ADDR_TCNTO0r)			/* Timer 0 count observation register */
+
+#define TCNTB1r					__REG_VALUE(ADDR_TCNTB1r)			/* Timer 1 count buffer register */
+#define TCMPB1r					__REG_VALUE(ADDR_TCMPB1r)			/* Timer 1 compare buffer register */
+#define TCNTO1r					__REG_VALUE(ADDR_TCNTO1r)			/* Timer 1 count observation register */
+
+#define TCNTB2r					__REG_VALUE(ADDR_TCNTB2r)			/* Timer 2 count buffer register */
+#define TCMPB2r					__REG_VALUE(ADDR_TCMPB2r)			/* Timer 2 compare buffer register */
+#define TCNTO2r					__REG_VALUE(ADDR_TCNTO2r)			/* Timer 2 count observation register */
+
+#define TCNTB3r					__REG_VALUE(ADDR_TCNTB3r)			/* Timer 3 count buffer register */
+#define TCMPB3r					__REG_VALUE(ADDR_TCMPB3r)			/* Timer 3 compare buffer register */
+#define TCNTO3r					__REG_VALUE(ADDR_TCNTO3r)			/* Timer 3 count observation register */
+
+#define TCNTB4r					__REG_VALUE(ADDR_TCNTB4r)			/* Timer 4 count buffer register */
+#define TCNTO4r					__REG_VALUE(ADDR_TCNTO4r)			/* Timer 4 count observation register */
+
+
+
+/* ################################################################################################################################## */
+
+
 #endif /* _SOC_S3C2440_REG_H_ */
