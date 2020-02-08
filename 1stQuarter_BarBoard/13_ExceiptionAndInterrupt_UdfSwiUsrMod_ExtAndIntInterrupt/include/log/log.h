@@ -34,7 +34,7 @@ typedef enum soc_debug_level{
 	}
 
 /* 系统debug打印，由debug开关控制，开机时中断置flag位 */
-extern BOOL gSysDebugFlag;
+extern BOOL volatile gSysDebugFlag;
 
 #define SYS_DEBUG_PRINT(lev, format, ...){\
 		if(gSysDebugFlag){\

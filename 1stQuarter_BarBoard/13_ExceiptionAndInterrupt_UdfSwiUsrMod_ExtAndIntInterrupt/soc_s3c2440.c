@@ -1,6 +1,6 @@
 #include <test.h>
 #include <tools.h>
-
+#include <soc_s3c2440_public.h>
 #define ENUM_TYPE_TO_STR(type) #type
 
 /* 测试用例名称，和枚举soc_test_t结构保持一致 */
@@ -21,7 +21,7 @@ static char *gTestObjStr[] = {
 	
 int soc_s3c2440_main(void)
 {
-	uint8 test_choose = TEST_EXT_INTERRUPT;
+	uint8 test_choose = TEST_MAX;
 	
 #if (TRUE == SOC_S3C2440_THUMB_INSTRUCTION_TEST)
 	test_choose = TEST_THUMB_INSTRUCTION;
@@ -31,12 +31,13 @@ int soc_s3c2440_main(void)
 	test_choose = TEST_SWI_EXCEPTION;
 #endif
 
+	test_choose = TEST_EXT_INTERRUPT;
+
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
 	print_screen("\r\n---------------------------------------------------------------------------");
 
 	switch(test_choose){
-		#if 0
 		case TEST_LED:
 			test_led();
 			break;
@@ -49,6 +50,7 @@ int soc_s3c2440_main(void)
 		case TEST_SDRAM:
 			test_sdram();
 			break;
+		#if 0
 		case TEST_RELOCATION_LESS_THAN_4K:
 			test_relocation_less_than_4k();
 			break;
@@ -61,10 +63,12 @@ int soc_s3c2440_main(void)
 			break;
 		case TEST_UDF_INSTRUCTION_EXCEPTION:
 		case TEST_SWI_EXCEPTION:
-			print_screen("\r\ncpu mode change and exceptinon test...");
+			print_screen("\r\nCpu mode change and exceptinon test...");
 			break;
 		case TEST_EXT_INTERRUPT:
-			test_ext_interrupt();
+			interrupt_init();
+			print_screen("\r\nPress key to occour interrupt!");
+			break;
 		default:
 			print_screen("\r\nNo have to test operation!");
 			break;
