@@ -406,26 +406,66 @@ void test_nor_flash_scan(void)
 
 }
 
-#define TEST_NOR_FLASH_READ_LEN_MAX 	(1024)
+#define TEST_NOR_FLASH_OP_LEN_MAX 	(255)
 
-void test_nor_flash_read(void)
+void test_nor_flash_earse(void)
 {
 	char str[_TOOL_GET_STRING_LEN_];
-	static uint8 readData[TEST_NOR_FLASH_READ_LEN_MAX];	
 	uint32 startAddr = 0x0;
-	uint32 readLen = 0;	
-	
-	set_buffer(readData, 0, sizeof(readData));
+	uint32 earseLen = 0;	
 
-	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
-
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
 	if (tool_atoux((const char *)str, &startAddr))
 	{
-		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(readData));
+		/* 获取长度 */
+		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_NOR_FLASH_OP_LEN_MAX);
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
 		
+		if (tool_atoui((const char *)str, &earseLen))
+		{
+			print_screen("\r\n Input startAddr:%x, earseLen:%d", startAddr, earseLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	nor_flash_earse_multi((uint32 *)startAddr, earseLen);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+void test_nor_flash_read(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	static uint8 readData[TEST_NOR_FLASH_OP_LEN_MAX];	
+	uint32 startAddr = 0x0;
+	uint32 readLen = 0;	
+	
+	set_buffer(readData, 0, sizeof(readData));
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(readData));
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
@@ -455,6 +495,57 @@ err_ret:
 	print_screen("\r\n Invalid input %s!!", str);
 	return;
 }
+
+void test_nor_flash_write(void )
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	char writeData[TEST_NOR_FLASH_OP_LEN_MAX];
+	uint32 writeAddr = 0x0;
+	uint16 writeVal = 0;	
+	int writeLen = 0;
+	int i = 0;
+	int j = 1;
+	
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for write[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &writeAddr))
+	{
+		/* 获取要写的值 */
+		print_screen("\r\n Enter string for write(max len %d):", TEST_NOR_FLASH_OP_LEN_MAX - 1);
+		set_buffer(writeData, 0, sizeof(writeData));
+		(void)get_line(writeData, sizeof(writeData));
+		writeLen = tool_strlen(writeData);
+		print_screen("\r\n write %s len is %d", writeData, writeLen);
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	while ((writeData[i] != '\0') && (writeData[j] != '\0'))
+	{
+		/* 构造16位数据 */
+		writeVal = writeData[i] | (writeData[j] << 8);
+		nor_flash_write_word((uint32 *)writeAddr, writeVal);
+		writeAddr += 2;
+		i += 2;
+		j += 2;
+	}
+
+	/* 写入最后一个字节'\0' */
+	writeVal = writeData[i];
+	nor_flash_write_word((uint32 *)writeAddr, writeVal);
+	
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
 
 /* Nor flash测试，保证中断均屏蔽没有打开，或者即使打开也不会产生中断 */
 void test_nor_flash(void)
@@ -494,7 +585,7 @@ void test_nor_flash(void)
 			
 			case 'e':
 			case 'E':
-				//test_nor_flash_earse();
+				test_nor_flash_earse();
 				break;
 
 			case 'r':
@@ -504,7 +595,7 @@ void test_nor_flash(void)
 			
 			case 'w':
 			case 'W':
-				//test_nor_flash_write();
+				test_nor_flash_write();
 				break;
 
 			case 'q':

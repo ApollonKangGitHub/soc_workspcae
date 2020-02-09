@@ -5,6 +5,9 @@
 
 #define NOR_FLASH_MAX_ADDR					(1 << 21)
 
+/* Q6:Toggle BIT I */
+#define NOR_FLASH_TOGGLE_BIT_I				(0x1 << 6)	
+
 /* NOR接在cs0上， base_addr = 0 */
 #define __NOR_FLASH_BASE__					(0x0)	
 
@@ -21,10 +24,16 @@
 #define __NOR_FLASH_CMD_1st_BUS_CYCLE_UNLOCK__		(0xAA)
 #define __NOR_FLASH_CMD_2nd_BUS_CYCLE_UNLOCK__		(0x55)
 
+/* 发送擦除命令 */
+#define __NOR_FLASH_CMD_3rd_BUS_CYCLE_EARSE__		(0x80)
 /* 发送读取芯片ID命令值 */
 #define __NOR_FLASH_CMD_3rd_BUS_CYCLE_ID__			(0x90)
 /* 发送CFI模式命令 */
 #define __NOR_FLASH_CMD_1st_BUS_CYCLE_CFI__			(0x98)
+/* 发出扇区地址 */
+#define __NOR_FLASH_CMD_6th_BUS_CYCLE_SECTOR_EARSE_	(0x30)
+/* 发送烧写命令 */
+#define __NOR_FLASH_CMD_3rd_BUS_CYCLE_WR__			(0xA0)
 
 /* 厂商ID和设备IDoffset */
 #define __NOR_FLASH_VENDOR_ID_OFFSET		(0)
@@ -62,5 +71,7 @@
 
 extern void nor_flash_info_display(void);
 extern void nor_flash_read_multi(uint8 * buf, int len, uint32 * addr);
+extern void nor_flash_earse_multi(uint32 * addr, int len);
+extern void nor_flash_write_word(uint32 * addr, uint16 val);
 
 #endif	/* _NOR_FLASH_H_ */

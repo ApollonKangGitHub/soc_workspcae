@@ -138,4 +138,69 @@ void nor_flash_read_multi(uint8 * buf, int len, uint32 * addr)
 	}
 }
 
+/* 等待擦除或者写操作完成 */
+static void nor_flash_wait_program_ready(uint32 offset)
+{
+	volatile uint32 val = 0;
+	volatile uint32 pre = 0;
+
+	pre = NOR_FLASH_DATA(offset >> __NOR_FLASH_A0_OFFSET_CPU__);
+	val = NOR_FLASH_DATA(offset >> __NOR_FLASH_A0_OFFSET_CPU__);
+
+	/* 判断Q6是否发生变化，可以得知是否烧写OK，如果Q6不变化了说明烧写完成 */
+	while((val & NOR_FLASH_TOGGLE_BIT_I) != (pre & NOR_FLASH_TOGGLE_BIT_I))
+	{
+		pre = val;
+		val = NOR_FLASH_DATA(offset >> __NOR_FLASH_A0_OFFSET_CPU__);
+	}
+}
+
+/* 
+ * 发现擦除少量内容却把擦除的不止这些，先记录下来，后面再看
+ */
+void nor_flash_earse_multi(uint32 * addr, int len)
+{
+	int cnt = 0;
+	volatile uint32 earseAddr = (uint32)addr;
+
+	while(cnt < len)
+	{
+		/* 解锁 */
+		NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_UNLOCK__);
+		NOR_FLASH_CMD(__NOT_FLASH_ADDR_2nd_BUS_CYCLE__, __NOR_FLASH_CMD_2nd_BUS_CYCLE_UNLOCK__);
+
+		/* earse sector */
+		NOR_FLASH_CMD(__NOT_FLASH_ADDR_3rd_BUS_CYCLE__, __NOR_FLASH_CMD_3rd_BUS_CYCLE_EARSE__);
+
+		/* 再次解锁 */
+		NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_UNLOCK__);
+		NOR_FLASH_CMD(__NOT_FLASH_ADDR_2nd_BUS_CYCLE__, __NOR_FLASH_CMD_2nd_BUS_CYCLE_UNLOCK__);
+
+		/* 发出扇区地址 */
+		NOR_FLASH_CMD(earseAddr >> __NOR_FLASH_A0_OFFSET_CPU__, __NOR_FLASH_CMD_6th_BUS_CYCLE_SECTOR_EARSE_);
+
+		nor_flash_wait_program_ready(earseAddr);
+		//print_screen("\r\n Earse success, addr:%x, total len=%d, cnt:%d", earseAddr, len, cnt);
+		cnt++;
+		earseAddr++;
+	}
+}
+
+void nor_flash_write_word(uint32 * addr, uint16 val)
+{
+	volatile uint32 writeAddr = (uint32)addr;
+	
+	/* 解锁 */
+	NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_UNLOCK__);
+	NOR_FLASH_CMD(__NOT_FLASH_ADDR_2nd_BUS_CYCLE__, __NOR_FLASH_CMD_2nd_BUS_CYCLE_UNLOCK__);
+
+	/* 发送写指令 */
+	NOR_FLASH_CMD(__NOT_FLASH_ADDR_3rd_BUS_CYCLE__, __NOR_FLASH_CMD_3rd_BUS_CYCLE_WR__);
+
+	/* 写数据 */
+	NOR_FLASH_CMD(writeAddr >> __NOR_FLASH_A0_OFFSET_CPU__, val);
+
+	/* 等待烧写成功后返回 */
+	nor_flash_wait_program_ready(writeAddr);
+}
 

@@ -435,6 +435,23 @@ int print_screen(const char * fmt, ...)
 	return 0;
 }
 
+int tool_strlen(char * str)
+{	
+	char *p = str;
+	int len = 0;
+	
+	if (NULL == p) {
+		return -1;
+	}
+
+	while(*p != '\0') {
+		len++;
+		p++;
+	}
+	
+	return len;
+}
+
 /*
  * 获取串口输入，以空格或回车结束
  * 这里有个坑，如果传入的值是大于255的，超过255的部分传进来就被截断了
