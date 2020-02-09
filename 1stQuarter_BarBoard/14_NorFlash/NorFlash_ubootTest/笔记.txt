@@ -1,0 +1,344 @@
+NorFlash原理与操作
+
+读写数据
+md.b 0 80	;单位Byte，读取0x80=128Bytes
+md.w 0 80	;单位Word，读取0x80=256Bytes
+mw.w 0 ff
+mw.b 0 1234
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+NOR的两种规范：
+1、jedec	（老的标准，芯片不自带电压、指令集等信息，根据厂商信息和内核静态信息表来确定内存大小、工作电压、指令集等参数）
+2、cfi		（新的标准，通用flash接口：common flash interface，直接可以读到内存大小、工作电压、指令集参数等）
+
+jedec	;命令方式读取ID信息，并与相关信息比较进行来识别，识别后可知道其容量、电压等参数
+		;linux内核中有jedec_probe.c文件，其中有一个jedec_table数组，该数组存放各种厂商、型号的Flash信息
+		;如下为AM29LV160DB的静态信息，缺点，每增加一款设备，内核要识别就必须更新该文件
+	{
+		.mfr_id		= MANUFACTURER_AMD,
+		.dev_id		= AM29LV160DB,
+		.name		= "AMD AM29LV160DB",
+		.uaddr		= {
+			[0] = MTD_UADDR_0x0AAA_0x0555,  /* x8 */
+			[1] = MTD_UADDR_0x0555_0x02AA   /* x16 */
+		},
+		.DevSize	= SIZE_2MiB,
+		.CmdSet		= P_ID_AMD_STD,
+		.NumEraseRegions= 4,
+		.regions	= {
+			ERASEINFO(0x04000,1),
+			ERASEINFO(0x02000,2),
+			ERASEINFO(0x08000,1),
+			ERASEINFO(0x10000,31)
+		}
+	}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+一、JEDEC读信息测试：
+
+1.读取ID:
+手册描述：
+1、wr addr[0x555]=0xAA
+2、wr addr[0x2AA]=0x55
+3、wr addr[0x555]=0x90	;读ID
+4、rd addr[0]  			;->得到Manufacturer ID:00C2H
+5、rd addr[1]  			;->得到Device ID 		: MX29LV160DT: 22C4; MX29LV160DB: 2249.
+6、wr addr[0x**]=0xF0	;给任意一个地址写0xF0即可恢复原始操作（reset）状态，即退出读ID状态
+
+由于2440开发板CPU的 ADDR_A1~ADDR_A16 与 NorFlash的 ADDR_A0~ADDR_A15一一对应连接，
+地址线存在移位，因此手册描述的地址在操作时，同一要左移一位，保证CPU发出的地址A1是发送到NorFlash的A0线上去的。
+
+CPU			NorFlash
+A0
+A1   ----   A0
+A2   ----   A1
+A3   ----   A2
+...  ----   ...
+A16  ----   A15
+
+即：
+1、wr addr[0xAAA]=0xAA
+2、wr addr[0x554]=0x55
+3、wr addr[0xAAA]=0x90		;读ID
+4、rd addr[0]  				;->得到Manufacturer ID	:00C2H
+5、rd addr[2]  				;->得到Device ID 		: MX29LV160DT: 22C4; MX29LV160DB: 2249.
+6、wr addr[0x***]=0xF0		;退出读ID状态
+
+对应UBOOT指令:
+mw.w aaa aa
+mw.w 554 55
+mw.w aaa 90					;读ID
+md.w 0 1  					;->得到Manufacturer ID		:00C2H
+md.w 2 1  					;->得到Device ID 			: MX29LV160DT: 22C4; MX29LV160DB: 2249.
+mw.w aaa f0					;退出读ID状态
+
+前两条命令的作用是解锁，第三条是指令（读ID），即先解锁再发出指令
+发出不同的指令时，地址0x0和地址0x1的内容不同。
+
+2.实验：
+注意：启动时提示信息“Hit any key to stop autoboot:  0 ”只有按空格键才有效终止自动boot，以进入uboot。
+
+/* ----------------------------------------以下为实验过程---------------------------------------- */
+U-Boot 1.1.6 enable Ethernet alltime(May 15 2018 - 19:44:59)
+
+DRAM:  64 MB
+Flash:  2 MB
+NAND:  256 MiB
+*** Warning - bad CRC or NAND, using default environment
+
+In:    serial
+Out:   serial
+Err:   serial
+UPLLVal [M:38h,P:2h,S:2h]
+MPLLVal [M:5ch,P:1h,S:1h]
+CLKDIVN:5h
+
+
++---------------------------------------------+
+| S3C2440A USB Downloader ver R0.03 2004 Jan  |
++---------------------------------------------+
+USB: IN_ENDPOINT:1 OUT_ENDPOINT:3
+FORMAT: <ADDR(DATA):4>+<SIZE(n+10):4>+<DATA:n>+<CS:2>
+NOTE: Power off/on or press the reset button for 1 sec
+      in order to get a valid USB device address.
+
+Hit any key to stop autoboot:  0 
+dm9000 i/o: 0x20000000, id: 0x90000a46 
+DM9000: running in 16 bit mode
+MAC: 08:00:3e:26:0a:5b
+could not establish link
+
+##### 100ask Bootloader for OpenJTAG #####
+[n] Download u-boot to Nand Flash
+[o] Download u-boot to Nor Flash
+[c] Re-scan Nor Flash
+[u] Copy bootloader from nand to nor
+[v] Copy bootloader from nor to nand
+[k] Download Linux kernel uImage
+[j] Download root_jffs2 image
+[y] Download root_yaffs image
+[d] Download to SDRAM & Run
+[z] Download zImage into RAM
+[g] Boot linux from RAM
+[f] Format the Nand Flash
+[s] Set the boot parameters
+[b] Boot the system
+[r] Reboot u-boot
+[q] Quit from menu
+Enter your selection: q
+OpenJTAG> 
+OpenJTAG> md.b 0 4
+00000000: 17 00 00 ea    ....
+OpenJTAG> md.w 0 2
+00000000: 0017 ea00    ....
+OpenJTAG> 						<----进入读ID状态前
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55           
+OpenJTAG> mw.w aaa 90			<----进入读ID状态
+OpenJTAG> 
+OpenJTAG> md.b 0 4				<----读取Manufacturer ID 和Device ID
+00000000: c2 00 49 22    ..I"
+OpenJTAG> md.w 0 2				
+00000000: 00c2 2249    ..I"
+OpenJTAG> 						<----退出读ID状态
+OpenJTAG> mw.b 0 f0
+OpenJTAG> md.b 0 4
+00000000: 17 00 00 ea    ....
+OpenJTAG> md.w 0 2
+00000000: 0017 ea00    ....
+OpenJTAG> 
+/* ----------------------------------------实验过程结束---------------------------------------- */
+
+可以看到读出来的厂家ID是正确的，根据设备ID可知使用的是 MX29LV160DB 芯片
+通过读取ID的方式，可以了解NorFLash的操作方式，无论是什么需求（读ID、擦除FLash、擦除某个扇区、烧写等）都以类似方式实现。
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+二、CFI读信息测试:
+1、wr addr[0x55]=0x98		;进入CFI模式
+2、read data
+rd addr[0x10] 				;0x0051
+rd addr[0x11] 				;0x0052
+rd addr[0x12] 				;0x0059
+rd addr[0x27]				;得到value=n, 2^n即容量
+3、恢复默认模式
+
+同理地址左移一位：
+1、wr addr[0XAA]=0x98		;进入CFI模式
+2、read data
+rd addr[0x20] 				;0x0051
+rd addr[0x22] 				;0x0052
+rd addr[0x24] 				;0x0059
+rd addr[0x4E]				;得到value=n, 2^n即容量
+3、wr addr[0XAA]=0xF0
+
+UBOOT指令：
+mw.w aa 98
+md.w 20 3
+md.w 4e 1
+mw.w aa f0
+
+测试：
+OpenJTAG> mw.w aa 98
+OpenJTAG> md.w 20 3
+00000020: 0051 0052 0059    Q.R.Y.
+OpenJTAG> md.w 4e 1
+0000004e: 0015    ..
+OpenJTAG> mw.w aa f0
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+三、写数据信息测试:
+在0x100000地址开始的地方写入"Kangruojin(0x4b-64-6e-67-72-75-6f-6a-69-6e)" {注意：不要写的地址过小否则可能会破坏UBOOT}
+
+/* 发出写NorFlash的指令 */
+wr addr[0x555]=0xAA
+wr addr[0x2AA]=0x55
+wr addr[0x555]=0xA0
+
+同理地址左移一位：
+mw.w aaa aa
+mw.w 554 55
+mw.w aaa a0	
+
+/* 指令发出完毕就可以写Norflash */
+mw.b 100000 4b
+mw.b 100001 61
+mw.b 100002 6e
+mw.b 100003 67
+mw.b 100004 72
+mw.b 100005 75
+mw.b 100006 6f
+mw.b 100007 6a
+mw.b 100008 69
+mw.b 100009 6e
+
+
+/* 测试1：直接写Nor flash，写不进去 */
+OpenJTAG> md.w 100000 5
+00100000: ffff ffff ffff ffff ffff    ..........
+OpenJTAG> 
+0010000a: ffff ffff ffff ffff ffff    ..........
+OpenJTAG> mw.b 100000 4b   
+OpenJTAG> mw.b 100001 61
+OpenJTAG> mw.b 100002 6e
+OpenJTAG> mw.b 100003 67
+OpenJTAG> mw.b 100004 72
+OpenJTAG> mw.b 100005 75
+OpenJTAG> mw.b 100006 6f
+OpenJTAG> mw.b 100007 6a
+OpenJTAG> mw.b 100008 69
+OpenJTAG> mw.b 100009 6e
+OpenJTAG> 
+OpenJTAG> md.w 100000 5
+00100000: ffff ffff ffff ffff ffff    ..........
+
+/* 测试2：写内存可以直接写进去（0x30000000开始是SDRAM属于内存） */
+OpenJTAG> md.w 30100000 5
+30100000: 0004 e1a0 fa44 ebff a810    ....D.....
+OpenJTAG> 
+3010000a: e89d 0f68 c032 c00d e1a0    ..h.2.....
+OpenJTAG> mw.b 30100000 4b
+OpenJTAG> mw.b 30100001 61
+OpenJTAG> mw.b 30100002 6e
+OpenJTAG> mw.b 30100003 67
+OpenJTAG> mw.b 30100004 72
+OpenJTAG> mw.b 30100005 75
+OpenJTAG> mw.b 30100006 6f
+OpenJTAG> mw.b 30100007 6a
+OpenJTAG> mw.b 30100008 69
+OpenJTAG> mw.b 30100009 6e
+OpenJTAG> 
+OpenJTAG> md.w 30100000 5
+30100000: 614b 676e 7572 6a6f 6e69    Kangruojin   <----写进去了
+
+/* 测试3：发出特定指令写Nor Flash,当写的地址里原有值不是0xff时，写不成功，注意：每写一个word都要重新发送一次写指令 */
+OpenJTAG> md.w 100020 5
+00100020: ffff ffff ffff ffff ffff    ..........
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100020 614b
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100022 676e
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100024 7572
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0    
+OpenJTAG> mw.w 100026 6a6f
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100028 6e69
+OpenJTAG> 
+OpenJTAG> md.w 100020 5
+00100020: 614b 676e 7572 6a6f 6e69    Kangruojin
+OpenJTAG> md.w 100020 5
+00100020: 614b 676e 7572 6a6f 6e69    Kangruojin    <-----原始值已经不是0xFF
+OpenJTAG> 
+0010002a: ffff ffff ffff ffff ffff    ..........
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100020 6e69
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100022 6a6f
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100024 7572
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0    
+OpenJTAG> mw.w 100026 676e
+OpenJTAG> 
+OpenJTAG> mw.w aaa aa
+OpenJTAG> mw.w 554 55
+OpenJTAG> mw.w aaa a0   
+OpenJTAG> mw.w 100028 614b
+OpenJTAG> 
+OpenJTAG> md.w 100020 5
+00100020: 6049 626e 7572 626e 6049    I`nbrunbI`	<-----写进去的不是实际写的值
+OpenJTAG> 
+
+/* 
+ * 测试4：先擦除再烧写
+ * 擦除扇区步骤：
+ * 先解锁，再发出0x80命令
+ * 再次此解锁，往扇区地址写入0x30以擦除扇区地址
+ * 擦除完成后，先解锁，再发出0xa0命令，再写扇区
+ * 不直达是不是Uboot有问题，擦除不成功
+*/
+
+/* Sector Erase（指定100020地址擦除） */
+mw.w aaa 00aa
+mw.w 554 0055
+mw.w aaa 0080	
+
+mw.w aaa 00aa
+mw.w 554 0055
+mw.w 100020 0030
+
+/* Chip Erase */
+mw.w aaa 00aa
+mw.w 554 0055
+mw.w aaa 0080	
+
+mw.w aaa 00aa
+mw.w 554 0055
+mw.w aaa 0010
