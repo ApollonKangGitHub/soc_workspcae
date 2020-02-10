@@ -17,6 +17,12 @@
 #define BOOL int
 #endif
 
+#define TOOL_STR_CMP_EQUAL			(0)
+#define TOOL_STR_CMP_GREATER(pos) 	(pos)
+#define TOOL_STR_CMP_LESS(pos)		(-(pos))
+
+#define TOOL_MAX_INT_STR_LEN		(11)
+
 typedef char * va_list;
 typedef unsigned int uint32;
 typedef unsigned short uint16;
@@ -36,9 +42,10 @@ typedef unsigned char uint8;
 
 #define _TOOL_GET_STRING_LEN_		(255)
 #define _TOOL_PRINT_HEX_STR_LEN_	(20)
-#define _TOOL_GB_BASE_		(1 << 30)
-#define _TOOL_MB_BASE_		(1 << 20)
+
 #define _TOOL_KB_BASE_		(1 << 10)
+#define _TOOL_MB_BASE_		(1 << 20)
+#define _TOOL_GB_BASE_		(1 << 30)
 
 typedef enum{
 	GET_STR_WORD = 0,
@@ -70,5 +77,6 @@ extern void tool_calc_mem_size
 	uint32 *byte
 );
 extern void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr);
+extern int tool_strncmp(const char * s1, const char * s2, int len);
 
 #endif

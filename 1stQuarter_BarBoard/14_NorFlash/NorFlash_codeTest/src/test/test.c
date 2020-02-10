@@ -551,27 +551,45 @@ err_ret:
 void test_nor_flash(void)
 {
 	char selectOption = '\n';
-
+	BOOL isFirst = TRUE;
+	BOOL ismenuChoose = FALSE;
+	
 	while(TRUE) {
-		/* 
-		 * 打印测试项菜单
-		 * 1.识别Nor Flash
-		 * 2.擦除Nor Flash
-		 * 3.读Nor Flash
-		 * 4.写Nor Flash
-		 */
-		print_screen("\r\n -------------------------------------------------------------");
-		print_screen("\r\n NOR FLASH TEST OBJ OPTIONALS");
-		print_screen("\r\n -------------------------------------------------------------");
-		print_screen("\r\n [s]scan nor flash.");
-		print_screen("\r\n [e]erase nor flash test.");
-		print_screen("\r\n [r]read nor flash test.");
-		print_screen("\r\n [w]write nor flash test.");
-		print_screen("\r\n [q]quit.");
-		print_screen("\r\n -------------------------------------------------------------");
-		print_screen("\r\n Enter selection: ");
 
-		selectOption = uart_getchar();
+		if (isFirst || ismenuChoose)
+		{
+			isFirst = FALSE;
+			ismenuChoose = FALSE;
+			/* 
+			 * 打印测试项菜单
+			 * 1.识别Nor Flash
+			 * 2.擦除Nor Flash
+			 * 3.读Nor Flash
+			 * 4.写Nor Flash
+			 * 5.菜单信息
+			 * 6.退出
+			 */
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n NOR FLASH TEST OBJ OPTIONALS");
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n [s]scan nor flash.");
+			print_screen("\r\n [e]erase nor flash test.");
+			print_screen("\r\n [r]read nor flash test.");
+			print_screen("\r\n [w]write nor flash test.");
+			print_screen("\r\n [?]Menu info.");
+			print_screen("\r\n [h]Menu info.");
+			print_screen("\r\n [q]quit.");
+			print_screen("\r\n -------------------------------------------------------------");
+			
+			print_screen("\r\n Enter selection: ");
+			selectOption = uart_getchar();
+		}
+		else 
+		{
+			print_screen("\r\n Enter selection: ");
+			selectOption = uart_getchar();
+		}
+
 		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
 		{
 			print_screen("\r\n Select optional is [%c]", selectOption);
@@ -598,15 +616,19 @@ void test_nor_flash(void)
 				test_nor_flash_write();
 				break;
 
+			case '?':
+			case 'h':
+				ismenuChoose = TRUE;
+				break;
+			
 			case 'q':
 			case 'Q':
 				return;
-				break;
-			
+
 			default:
 				if ((selectOption >= 0x20) && (selectOption <= 0xFF))
 				{
-					print_screen("\r\n Select optional [#%c-%d#] is invalid!!!", 
+					print_screen("\r\n Select optional [ %c ] is invalid!!!", 
 						selectOption, selectOption);
 				}
 				break;

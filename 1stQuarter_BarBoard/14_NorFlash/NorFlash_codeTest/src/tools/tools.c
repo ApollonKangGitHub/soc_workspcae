@@ -27,7 +27,7 @@ void tool_calc_mem_size
 	*gbbyte = temp / _TOOL_GB_BASE_;
 	temp = temp % _TOOL_GB_BASE_;
 	*mbbyte = temp / _TOOL_MB_BASE_;
-	temp = temp % _TOOL_GB_BASE_;
+	temp = temp % _TOOL_MB_BASE_;
 	*kbyte = temp / _TOOL_KB_BASE_;
 	*byte = temp % _TOOL_KB_BASE_;
 }
@@ -130,41 +130,61 @@ char * tool_itoa(uint32 value, char * str)
 	return str;
 }
 
+int tool_strncmp(const char * s1, const char * s2, int len)
+{
+	int i = 0;
+	
+	while ((i < len) && (s1[i] != '\0') && (s2[i] != '\0')) {
+		if (s1[i] == s2[i]) {
+			i++;
+			continue;
+		}
+		else if (s1[i] > s2[i]) {
+			return TOOL_STR_CMP_GREATER(i);
+		}
+		else{
+			return TOOL_STR_CMP_LESS(i);
+		}
+	}
+
+	if (i < len) {
+		if (s1[i] == '\0') {
+			return TOOL_STR_CMP_LESS(i);
+		}
+		else {
+			return TOOL_STR_CMP_GREATER(i);
+		}
+	}
+
+	return TOOL_STR_CMP_EQUAL;
+}
+
 /* 十进制的字符串表示形式，转换为十进制数值，只支持无符号uint32 */
 BOOL tool_atoui(const char * str, uint32 * result)
 {
-	static char uintMax[] = {"4294967295"};
+	static char uintMax[TOOL_MAX_INT_STR_LEN] = {"4294967295"};
 	int index = 0;
 	const char *s = str;
 	uint32 value = 0;
+
+	/* 传入的string值大于最大正数的string则不支持，返回FALSE */
+	if (tool_strncmp(s, uintMax, TOOL_MAX_INT_STR_LEN) > 0) {
+		return FALSE;
+	}
 	
 	while(s[index]) {
-		if((s[index] < '0') || (s[index] > '9') || (index == 10)){
+		if((s[index] < '0') 
+			|| (s[index] > '9') 
+			|| (index >= TOOL_MAX_INT_STR_LEN)) {
 			return FALSE;
 		}
-		
-		value = (value << 3) + (value << 1);	/* 即value = value x 10 */
+
+		/* 即value = value x 10 + low */
+		value = (value << 3) + (value << 1);	
 		value += (s[index] - '0');
 		index++;
 	}
 
-	if (index == 10)
-	{
-		if ((str[0] > uintMax[0])
-			|| ((str[0] == uintMax[0]) && (str[1] > uintMax[1]))
-			|| ((str[1] == uintMax[1]) && (str[2] > uintMax[2]))
-			|| ((str[2] == uintMax[2]) && (str[3] > uintMax[3]))
-			|| ((str[3] == uintMax[3]) && (str[4] > uintMax[4]))
-			|| ((str[4] == uintMax[4]) && (str[5] > uintMax[5]))
-			|| ((str[5] == uintMax[5]) && (str[6] > uintMax[6]))
-			|| ((str[6] == uintMax[6]) && (str[7] > uintMax[7]))
-			|| ((str[7] == uintMax[7]) && (str[8] > uintMax[8]))
-			|| ((str[8] == uintMax[8]) && (str[9] > uintMax[9])))
-		{
-			return FALSE;
-		}
-	}
-	
 	*result = value;
 	return TRUE;
 }
@@ -178,7 +198,7 @@ BOOL tool_atoux(const char * str, uint32 * result)
 		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 2:16~31 */
 		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 3:32~47 */
 		 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,	/* 4:48~63 */
-		10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 5:64~79 */
+		-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 5:64~79 */
 		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 6:80~95 */
 		-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 7:96~111 */
 		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,	/* 8:112~127 */
@@ -209,7 +229,8 @@ BOOL tool_atoux(const char * str, uint32 * result)
 			return FALSE;
 		}
 		
-		value = value << 4;			/* 即value = value x 16 */
+		/* 即value = value x 16 + low */
+		value = value << 4;
 		value += asciiTable[*s];
 		s++;
 	}
@@ -319,7 +340,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 	over = startAddr + len;
 	
 	if (over % 16) {
-		over = (over / 16 * 16) + 1;
+		over = ((over / 16 + 1) * 16);
 	}
 	else {
 		over = (over / 16 * 16);
@@ -337,7 +358,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 
 		/* 打印十六进制 */
 		if ((indexAddr < startAddr) 
-			|| (indexAddr > startAddr + len))
+			|| (indexAddr >= startAddr + len))
 		{
 			print_screen("%c%c%c", 0x20, 0x20, 0x20);	
 		}
@@ -354,7 +375,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 		}
 		/* 不属于打印范围但是要格式化补全的一行 */
 		else if ((indexAddr < startAddr) 
-			|| (indexAddr > startAddr + len))
+			|| (indexAddr >= startAddr + len))
 		{
 			strBuf[indexAddr % 16] = ' ';
 		}
@@ -367,7 +388,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 		/* 打印缓存的字符 */
 		if ((0 == (indexAddr+1) % 16) && (indexAddr != start))
 		{
-			print_screen(" ; %s", strBuf);
+			print_screen(" | %s |", strBuf);
 			set_buffer(strBuf, 0, sizeof(strBuf));
 		}
 	}
