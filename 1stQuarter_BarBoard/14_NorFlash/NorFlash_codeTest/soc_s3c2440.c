@@ -84,6 +84,7 @@ int soc_s3c2440_main(void)
 			test_nor_flash();
 			break;
 		case TEST_NAND_FLASH:
+			test_nand_flash();
 			break;
 		default:
 			print_screen("\r\nNo have to test operation!");

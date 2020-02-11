@@ -369,7 +369,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 		}
 
 		/* 缓存字符 */
-		if (pData[index] > 0x20 && pData[index] < 0x7F)
+		if (pData[index] >= 0x20 && pData[index] < 0x7F)
 		{
 			strBuf[indexAddr % 16] = pData[index];
 		}
@@ -417,13 +417,13 @@ int print_screen(const char * fmt, ...)
 	set_buffer(str, 0, sizeof(str));
 	while('\0' != *pFmt){
 		if('%' != *pFmt){
-			uart_putchar(*pFmt++);
+			tool_putChar(*pFmt++);
 			continue;
 		}
 		pFmt++;		/* 跳过%，判断输出格式 */
 		switch(*pFmt){
 			case 'c':
-				uart_putchar(va_arg(pList, int));
+				tool_putChar(va_arg(pList, int));
 				break;
 			case 'u':
 				set_buffer(str, 0, sizeof(str));
@@ -432,22 +432,22 @@ int print_screen(const char * fmt, ...)
 				if (temp >> 31) {
 					temp &= 0X7FFFFFFF;
 				}
-				uart_puts(tool_itoa(temp, str));
+				tool_puts(tool_itoa(temp, str));
 				break;
 			case 'd':
 				set_buffer(str, 0, sizeof(str));
-				uart_puts(tool_itoa(va_arg(pList, int), str));
+				tool_puts(tool_itoa(va_arg(pList, int), str));
 				break;
 			case 'x':
 			case 'X':
 				set_buffer(str, 0, sizeof(str));
-				uart_puts(tool_uitoxa(va_arg(pList, int), str));
+				tool_puts(tool_uitoxa(va_arg(pList, int), str));
 				break;
 			case 's':
-				uart_puts(va_arg(pList, char*));
+				tool_puts(va_arg(pList, char*));
 				break;
 			default:
-				uart_putchar(*--pFmt);		/* 不是格式化输出，则输出百分号 */
+				tool_putChar(*--pFmt);		/* 不是格式化输出，则输出百分号 */
 				break;
 		}
 		pFmt++;
@@ -509,7 +509,7 @@ char * get_string(char * str, uint32 len, GET_STRING_FLAG flag)
 	
 	set_buffer(s, 0, len);
 	while(loop_max > i+1){
-		s[i] = (uint8)uart_getchar();
+		s[i] = (uint8)tool_getChar();
 
 		/* 退格删除，清除buffer缓存，并重新获取 */
 		if('\b' == s[i]){
@@ -518,25 +518,27 @@ char * get_string(char * str, uint32 len, GET_STRING_FLAG flag)
 			}
 			s[i] = 0;				/* 清除回退控制符buffer */
 			s[--i] = 0;				/* 清除控制对象buffer */
-			uart_putchar('\b');		/* 退格准备清除屏幕退格对象 */
-			uart_putchar(32);		/* 清除屏幕退格对象	*/
-			uart_putchar('\b');		/* 再退格，光标回退 */
+			tool_putChar('\b');		/* 退格准备清除屏幕退格对象 */
+			tool_putChar(32);		/* 清除屏幕退格对象	*/
+			tool_putChar('\b');		/* 再退格，光标回退 */
 			continue;
 		}
-		else if(('\r' == s[i]) || ('\n' == s[i]) || ((GET_STR_WORD == flag) && (32 == s[i]))){	
+		else if(('\r' == s[i]) 
+			|| ('\n' == s[i]) 
+			|| ((GET_STR_WORD == flag) && (32 == s[i]))){	
 			/* 换行或空格(flag为获取单词，而非整行)结束输入 */
-			uart_putchar(s[i]);
+			tool_putChar(s[i]);
 			if('\r' == s[i]){
-				uart_putchar('\n');
+				tool_putChar('\n');
 			}else if('\n' == s[i]){
-				uart_putchar('\r');
+				tool_putChar('\r');
 			}
 			s[i] = '\0';
 			break;
 		}
 		else{
 			/* 正常回显,str[]录入不区分控制字符，所以输入时尽量不要用上下左右键之类的按键 */
-			uart_putchar(s[i]);		
+			tool_putChar(s[i]);		
 			i++;
 		}
 	}

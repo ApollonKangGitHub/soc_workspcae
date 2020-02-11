@@ -38,5 +38,6 @@ extern void test_dealy(uint16 sec);
 extern void test_thumb_instruction(void);
 extern void test_ext_interrupt(void);
 extern void test_nor_flash(void);
+extern void test_nand_flash(void);
 
 #endif /* __TEST_H__ */

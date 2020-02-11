@@ -19,6 +19,7 @@
 #define TEST_OBJ_RELOCATION
 #define TEST_OBJ_THUMB_INSTRUCTION
 #define TEST_OBJ_NOR_FLASH
+#define TEST_OBJ_NAND_FLASH
 
 /* 调试函数 */
 void test_start(void)
@@ -582,12 +583,12 @@ void test_nor_flash(void)
 			print_screen("\r\n -------------------------------------------------------------");
 			
 			print_screen("\r\n Enter selection: ");
-			selectOption = uart_getchar();
+			selectOption = tool_getChar();
 		}
 		else 
 		{
 			print_screen("\r\n Enter selection: ");
-			selectOption = uart_getchar();
+			selectOption = tool_getChar();
 		}
 
 		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
@@ -639,3 +640,11 @@ void test_nor_flash(void)
 }
 
 #endif	/* TEST_OBJ_NOR_FLASH */
+
+#ifdef TEST_OBJ_NAND_FLASH
+void test_nand_flash(void)
+{
+
+}
+
+#endif /* TEST_OBJ_NAND_FLASH */

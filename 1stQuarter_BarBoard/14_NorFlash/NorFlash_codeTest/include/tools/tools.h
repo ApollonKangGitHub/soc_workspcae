@@ -53,6 +53,10 @@ typedef enum{
 	GET_STR_MAX
 }GET_STRING_FLAG;
 
+#define tool_getChar uart_getchar
+#define tool_putChar uart_putchar
+#define tool_puts uart_puts
+
 extern void tool_dealy(uint16 sec);
 extern BOOL tool_isBigEndOrder(void);
 extern int tool_strlen(char * str);
