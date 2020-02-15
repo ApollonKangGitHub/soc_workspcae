@@ -74,7 +74,6 @@ static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 
 /* 中断测试驱动注册函数数组 */
 static interrupt_handle_hook gInterruptHandleDrv[interrupt_type_MAX] = {NULL};
-
 void * interrupt_handle(interrupt_type_t type, void * pArg)
 {
 	if (NULL != gInterruptHandleDrv[type])
@@ -85,6 +84,7 @@ void * interrupt_handle(interrupt_type_t type, void * pArg)
 	{
 		print_screen("\r\nInvalid function for interrupt %s[%d]", 
 			gInterruptTypeStr[type], type);
+
 		return NULL;
 	}
 }
@@ -299,7 +299,7 @@ BOOL interrupt_status_get
 	}
 
 	*real = occurInterrupt;
-
+	
 	/* 打印中断类型等信息 */
 	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "interrupt type:%s[%d]", 
 		gInterruptTypeStr[occurInterrupt], occurInterrupt);
@@ -343,27 +343,6 @@ void interrupt_status_clear(interrupt_type_t type)
 		"clear over SRCPNDr-INTPNDr-EINTPENDr:%x-%x-%x", 
 		SRCPNDr, INTPNDr, EINTPENDr);
 #endif
-}
-
-/* IRQ异常中断识别处理入口 */
-void * interrupt_irq_deal_start(void * pArgv)
-{
-	interrupt_type_t intType;
-	void * intteruptRet = NULL;
-	
-	/* 分辨中断源 */
-	(void)interrupt_status_get(interrupt_type_MAX, &intType);
-
-	if (interrupt_type_MAX > intType)
-	{
-		/* 根据中断源调用对应处理函数 */
-		intteruptRet = interrupt_handle(intType, pArgv);
-	}
-
-	/* 清除中断 */
-	(void)interrupt_status_clear(intType);
-
-	return intteruptRet;
 }
 
 static void interrupt_controller_enable_set
@@ -510,7 +489,7 @@ BOOL interrupt_register
 	
 	interrupt_controller_enable_set(type, TRUE);
 	gInterruptHandleDrv[type] = interruptHandle;
-	
+
 	return TRUE;
 }
 
@@ -527,5 +506,26 @@ BOOL interrupt_unregister(interrupt_type_t type)
 	gInterruptHandleDrv[type] = NULL;
 	
 	return TRUE;
+}
+
+/* IRQ异常中断识别处理入口 */
+void * interrupt_irq_deal_start(void * pArgv)
+{
+	interrupt_type_t intType;
+	void * intteruptRet = NULL;
+	
+	/* 分辨中断源 */
+	(void)interrupt_status_get(interrupt_type_MAX, &intType);
+
+	if (interrupt_type_MAX > intType)
+	{
+		/* 根据中断源调用对应处理函数 */
+		intteruptRet = interrupt_handle(intType, pArgv);
+	}
+
+	/* 清除中断 */
+	(void)interrupt_status_clear(intType);
+
+	return intteruptRet;
 }
 

@@ -51,11 +51,6 @@ typedef enum{
 	SOC_MEMCTRL_BANK7_SDRAN_1,
 	SOC_MEMCTRL_BANK_SDRAM_ALL
 }SDRAM_CTRL_t;
-	
-extern int nor_flash_start_squence_set(uint32 choose);
-extern int nor_flash_init(void);
 extern int sdram_init(SDRAM_CTRL_t choose);
-extern void test_sdram(void);
-extern void relocate_init(void);
 
 #endif

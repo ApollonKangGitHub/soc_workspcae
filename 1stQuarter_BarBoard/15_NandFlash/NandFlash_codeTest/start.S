@@ -146,13 +146,9 @@ set_stackFor_NANDOrNor_startUp:
  */
  
 @================================================================================
-@SDRAM、重定位、UART初始化
+@重定位、CPU模式修改、UART初始化、主函数启动
 @================================================================================
 soc_s3c2440_prog_init_start:
-	/* sdram init */
-	BL sdram0_init
-	BL sdram1_init
-	
 	/* relocate memry init */
 	BL relocate_init
 
@@ -179,9 +175,11 @@ app_start:
 sdram_start:
 	/* UART init */
 	BL uart_init
+	BL test_start
+
 	/* jump to soc_s3c2440_main run */
 	BL soc_s3c2440_main
-
+	BL test_end
 	
 /* 未定义指令异常测试 */
 #if (TRUE == SOC_S3C2440_UND_INSTRUCTION_TEST)	

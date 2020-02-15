@@ -8,10 +8,14 @@
 #include <timer.h>
 #include <nor_flash.h>
 #include <nand_flash.h>
-#include <soc_s3c2440.h>
+#include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
-/* 该宏只用来在source Insight符号栏中合并打开测试对象，方便查看 */
+/*
+ * 这些模块测试对象宏，
+ * 主要用来在source Insight符号栏中合并打开测试对象，方便查看 
+ * 此外可以用来屏蔽相应代码直接不编译
+ */
 #define TEST_OBJ_INTERRUPT
 #define TEST_OBJ_UART
 #define TEST_OBJ_LED
@@ -21,6 +25,9 @@
 #define TEST_OBJ_THUMB_INSTRUCTION
 #define TEST_OBJ_NOR_FLASH
 #define TEST_OBJ_NAND_FLASH
+
+#define TEST_FLASH_OP_LEN_MAX 	(1024)
+static uint8 gDataBuf[TEST_FLASH_OP_LEN_MAX];	
 
 /* 调试函数 */
 void test_start(void)
@@ -76,6 +83,55 @@ void test_uart(void)
 #endif
 
 #ifdef TEST_OBJ_LED_UART
+
+/* 设置Nor Flash 的时钟频率/周期，基于HCLK（高速总线时钟） */
+static int test_nor_flash_start_squence_set(uint32 choose)
+{
+	SOC_DEBUG_PRINT(SOC_DBG_NORMAL, "choose is %d", choose);
+	switch(choose)
+	{
+		case MEMCTRL_BANKCON_TACC_CLOCK_1:	
+		case MEMCTRL_BANKCON_TACC_CLOCK_2:
+		case MEMCTRL_BANKCON_TACC_CLOCK_3:
+		case MEMCTRL_BANKCON_TACC_CLOCK_4:
+		case MEMCTRL_BANKCON_TACC_CLOCK_6:
+		case MEMCTRL_BANKCON_TACC_CLOCK_8:
+		case MEMCTRL_BANKCON_TACC_CLOCK_10:
+		case MEMCTRL_BANKCON_TACC_CLOCK_14:
+			/*
+			 * 修改NOR flash的访问周期TACC时序，指定对象为BANKCON0r寄存器的相应位(0~7)
+   		     * 以增强访问效率，但是必须大于对应Nor flash需要的最小TACC
+			 */
+			BANK_CONFN_TACC_SET(BANKCON0r, choose);
+			break;
+		default:
+			BANK_CONFN_TACC_SET(BANKCON0r, MEMCTRL_BANKCON_TACC_CLOCK_14);
+			break;
+	}
+	return 0;
+}
+
+static int test_nor_flash_clk_init(void)
+{
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor flash!");
+
+	/* DW0 Indicate data bus width for bank 0 (read only). */
+	/* BWSCONr not use and can't set */
+	if(0x01 == (BWSCONr >> 1) & 0x03){
+		print_screen("\n\rNor flash data width is 16bits!");
+	}
+	else if(0x02 == (BWSCONr >> 1) & 0x03){
+		print_screen("\n\rNor flash data width is 32bits!");
+	}
+	else{
+		print_screen("\n\rNor flash data width is unavail!");
+	}
+	/* 设置HCLK=100MHZ时的最小TACC以快速访问 */
+	test_nor_flash_start_squence_set(MEMCTRL_BANKCON_TACC_CLOCK_8);
+
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "start init nor succeed!");
+}
+
 void test_led_uart(void)
 {
 	/* 测试uart、LED、输入输出、Nor时钟频率修改等基本功能 */
@@ -114,7 +170,7 @@ void test_led_uart(void)
    			 * 即需要正常工作，必须保证在5及其以上，否则Nor中的指令是无法正常读取的
 			*/
 			if(choose >= 5){
-				nor_flash_start_squence_set(choose);
+				test_nor_flash_start_squence_set(choose);
 			}
 			else{
 				print_screen("\n\r当前NorFlash需要设置TACC大于4才可正常工作，请重新选择！\r\n");
@@ -142,7 +198,7 @@ void test_led_uart(void)
 		}
 		#else 
 		/* 直接初始化nor flash访问的TACC */
-		nor_flash_init();
+		test_nor_flash_clk_init();
 		#endif
 	}
 }
@@ -378,7 +434,7 @@ void  test_interrupt_key_init(void)
 void test_interrupt_ext_key_init(void)
 {
 	test_interrupt_key_init();
-
+	
 	/* 注册回调函数，使能中断控制器 */
 	interrupt_register(interrupt_type_EXT_INT0, test_interrupt_handle_key_s2);
 	interrupt_register(interrupt_type_EXT_INT2, test_interrupt_handle_key_s3);
@@ -397,7 +453,7 @@ void test_interrupt_int_timer_init(void)
 
 #endif	/* TEST_OBJ_INTERRUPT */
 
-#ifdef TEST_OBJ_NOR_FLASH
+#if (defined TEST_OBJ_NOR_FLASH) || (defined TEST_OBJ_NAND_FLASH)
 
 void test_nor_flash_scan(void)
 {
@@ -407,8 +463,6 @@ void test_nor_flash_scan(void)
 	print_screen("\r\n -------------------------------------------------------------\r\n");
 
 }
-
-#define TEST_NOR_FLASH_OP_LEN_MAX 	(255)
 
 void test_nor_flash_earse(void)
 {
@@ -424,7 +478,7 @@ void test_nor_flash_earse(void)
 	if (tool_atoux((const char *)str, &startAddr))
 	{
 		/* 获取长度 */
-		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_NOR_FLASH_OP_LEN_MAX);
+		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_FLASH_OP_LEN_MAX);
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
@@ -453,11 +507,10 @@ err_ret:
 void test_nor_flash_read(void)
 {
 	char str[_TOOL_GET_STRING_LEN_];
-	static uint8 readData[TEST_NOR_FLASH_OP_LEN_MAX];	
 	uint32 startAddr = 0x0;
 	uint32 readLen = 0;	
 	
-	set_buffer(readData, 0, sizeof(readData));
+	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 
 	/* 获取地址 */
 	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
@@ -467,18 +520,18 @@ void test_nor_flash_read(void)
 	if (tool_atoux((const char *)str, &startAddr))
 	{
 		/* 获取长度 */
-		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(readData));
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
 		if (tool_atoui((const char *)str, &readLen))
 		{
 			print_screen("\r\n Input startAddr:%x, readLen:%d", startAddr, readLen);
-			if (readLen > sizeof(readData)) {
-				print_screen("\r\n Read up to %d bytes!!", sizeof(readData));
+			if (readLen > sizeof(gDataBuf)) {
+				print_screen("\r\n Read up to %d bytes!!", sizeof(gDataBuf));
 				goto err_ret;
 			}
-			nor_flash_read_multi(readData, readLen, (uint32*)startAddr);
+			nor_flash_read_multi(gDataBuf, readLen, (uint32*)startAddr);
 		}
 		else 
 		{
@@ -490,7 +543,7 @@ void test_nor_flash_read(void)
 		goto err_ret;
 	}
 	
-	print_hexStr_multiple(readData, readLen, startAddr);
+	print_hexStr_multiple(gDataBuf, readLen, startAddr);
 	return;
 	
 err_ret:
@@ -501,7 +554,6 @@ err_ret:
 void test_nor_flash_write(void )
 {
 	char str[_TOOL_GET_STRING_LEN_];
-	char writeData[TEST_NOR_FLASH_OP_LEN_MAX];
 	uint32 writeAddr = 0x0;
 	uint16 writeVal = 0;	
 	int writeLen = 0;
@@ -516,21 +568,21 @@ void test_nor_flash_write(void )
 	if (tool_atoux((const char *)str, &writeAddr))
 	{
 		/* 获取要写的值 */
-		print_screen("\r\n Enter string for write(max len %d):", TEST_NOR_FLASH_OP_LEN_MAX - 1);
-		set_buffer(writeData, 0, sizeof(writeData));
-		(void)get_line(writeData, sizeof(writeData));
-		writeLen = tool_strlen(writeData);
-		print_screen("\r\n write %s len is %d", writeData, writeLen);
+		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX - 1);
+		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+		(void)get_line(gDataBuf, sizeof(gDataBuf));
+		writeLen = tool_strlen(gDataBuf);
+		print_screen("\r\n write %s len is %d", gDataBuf, writeLen);
 	}
 	else
 	{
 		goto err_ret;
 	}
 
-	while ((writeData[i] != '\0') && (writeData[j] != '\0'))
+	while ((gDataBuf[i] != '\0') && (gDataBuf[j] != '\0'))
 	{
 		/* 构造16位数据 */
-		writeVal = writeData[i] | (writeData[j] << 8);
+		writeVal = gDataBuf[i] | (gDataBuf[j] << 8);
 		nor_flash_write_word((uint32 *)writeAddr, writeVal);
 		writeAddr += 2;
 		i += 2;
@@ -538,7 +590,7 @@ void test_nor_flash_write(void )
 	}
 
 	/* 写入最后一个字节'\0' */
-	writeVal = writeData[i];
+	writeVal = gDataBuf[i];
 	nor_flash_write_word((uint32 *)writeAddr, writeVal);
 	
 	return;
@@ -547,7 +599,6 @@ err_ret:
 	print_screen("\r\n Invalid input %s!!", str);
 	return;
 }
-
 
 /* Nor flash测试，保证中断均屏蔽没有打开，或者即使打开也不会产生中断 */
 void test_nor_flash(void)
@@ -640,16 +691,133 @@ void test_nor_flash(void)
 	return;
 }
 
-#endif	/* TEST_OBJ_NOR_FLASH */
-
-#ifdef TEST_OBJ_NAND_FLASH
-
 void test_nand_flash_scan(void)
 {
 	/* 打印厂家ID、设备ID、页大小、块大小等信息 */
 	print_screen("\r\n\r\n -------------------------------------------------------------");
 	nand_flash_info_display();
 	print_screen("\r\n -------------------------------------------------------------\r\n");
+}
+
+void test_nand_flash_data_read(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 startAddr = 0x0;
+	uint32 readLen = 0;	
+	
+	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
+		
+		if (tool_atoui((const char *)str, &readLen))
+		{
+			print_screen("\r\n Input startAddr:%x, readLen:%d", startAddr, readLen);
+			if (readLen > sizeof(gDataBuf)) {
+				print_screen("\r\n Read up to %d bytes!!", sizeof(gDataBuf));
+				goto err_ret;
+			}
+			nand_flash_data_read(startAddr, gDataBuf, readLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+	
+	print_hexStr_multiple(gDataBuf, readLen, startAddr);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+void test_nand_flash_oob_read(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 startAddr = 0x0;
+	uint32 readLen = 0;	
+	uint32 index = 0;
+	uint32 printLen = 0;
+	uint32 surplusLen = 0;
+	uint32 curPos = 0;
+	
+	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for oob[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
+		
+		if (tool_atoui((const char *)str, &readLen))
+		{
+			print_screen("\r\n Input startAddr:%x, readLen:%d", startAddr, readLen);
+			if (readLen > sizeof(gDataBuf)) {
+				print_screen("\r\n Read up to %d bytes!!", sizeof(gDataBuf));
+				goto err_ret;
+			}
+			nand_flash_oob_read(startAddr, gDataBuf, readLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	/* 打印OOB数据 */
+	for (index = 0; index < readLen; index++)
+	{
+		curPos = startAddr + index;
+		if ((0 == (curPos % NAND_FLASH_OOB_SIZE)) || (curPos == startAddr))
+		{
+			surplusLen = readLen - index;
+			printLen = (surplusLen >= NAND_FLASH_OOB_SIZE) 
+					? (NAND_FLASH_OOB_SIZE - (curPos % NAND_FLASH_OOB_SIZE)) 
+					: (surplusLen);
+
+			print_screen("\r\n [page %d OOB:] ", curPos / NAND_FLASH_OOB_SIZE);
+			print_hexStr_multiple(&gDataBuf[index], printLen, curPos);
+		}
+	}
+	
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+/* 检查坏块测试 */
+void test_nand_flash_bad_blk_check(void)
+{
+	print_screen("\r\n\r\n -------------------------------------------------------------");
+	nand_flash_check();
+	print_screen("\r\n\r\n -------------------------------------------------------------");
 }
 
 /* 注意，由于此时还不支持NAND flash的代码重定位，因此下载到Nor中去操作Nandflash */
@@ -659,8 +827,13 @@ void test_nand_flash(void)
 	BOOL isFirst = TRUE;
 	BOOL ismenuChoose = FALSE;
 
-	/* Nand Flash init */
-	nand_flash_init();
+	if (isBootFromNorFlash())
+	{
+		/* Nand Flash init */
+		nand_flash_init();
+		print_screen("\r\n Nor Flash Start and Nand Flash Test init!");
+	}
+
 	print_screen("\r\n Nand Flash init succeed!");
 	
 	while(TRUE) {
@@ -671,18 +844,22 @@ void test_nand_flash(void)
 			/* 
 			 * 打印测试项菜单
 			 * 1.识别Nand Flash
-			 * 2.擦除Nand Flash
-			 * 3.读Nand Flash
-			 * 4.写Nand Flash
-			 * 5.菜单信息
-			 * 6.退出
+			 * 2.读Nand Flash Data
+			 * 3.读Nand Flash OOB
+			 * 4.Nand Flash检查
+			 * 5.擦除Nand Flash
+			 * 6.写Nand Flash
+			 * 7.菜单信息
+			 * 8.退出
 			 */
 			print_screen("\r\n -------------------------------------------------------------");
 			print_screen("\r\n NAND FLASH TEST OBJ OPTIONALS");
 			print_screen("\r\n -------------------------------------------------------------");
 			print_screen("\r\n [s]scan nand flash.");
+			print_screen("\r\n [d]read nand flash data test.");
+			print_screen("\r\n [o]read nand flash OOB test.");
+			print_screen("\r\n [c]OOB check bad block.");
 			print_screen("\r\n [e]erase nand flash test.");
-			print_screen("\r\n [r]read nand flash test.");
 			print_screen("\r\n [w]write nand flash test.");
 			print_screen("\r\n [?]Menu info.");
 			print_screen("\r\n [h]Menu info.");
@@ -708,20 +885,115 @@ void test_nand_flash(void)
 			case 'S':
 				test_nand_flash_scan();
 				break;
+
+			case 'd':
+			case 'D':
+				test_nand_flash_data_read();
+				break;
+			
+			case 'o':
+			case 'O':
+				test_nand_flash_oob_read();
+				break;
+			
+			case 'c':
+			case 'C':
+				test_nand_flash_bad_blk_check();
+				break;
 			
 			case 'e':
 			case 'E':
 				//test_nand_flash_earse();
 				break;
-
-			case 'r':
-			case 'R':
-				//test_nand_flash_read();
-				break;
 			
 			case 'w':
 			case 'W':
 				//test_nand_flash_write();
+				break;
+						
+			case '?':
+			case 'h':
+				ismenuChoose = TRUE;
+				break;
+			
+			case 'q':
+			case 'Q':
+				return;
+
+			default:
+				if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+				{
+					print_screen("\r\n Select optional [ %c ] is invalid!!!", 
+						selectOption, selectOption);
+				}
+				break;
+		}
+	}
+	
+	return;
+}
+
+void test_flash(void)
+{
+	char selectOption = '\n';
+	BOOL isFirst = TRUE;
+	BOOL ismenuChoose = FALSE;
+	
+	while(TRUE) {
+
+		if (isFirst || ismenuChoose)
+		{
+			isFirst = FALSE;
+			ismenuChoose = FALSE;
+
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n NOR/NAND FLASH TEST OBJ OPTIONALS");
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n [a]Nand flash test.");
+			print_screen("\r\n [o]Nor flash test.");
+			print_screen("\r\n [?]Menu info.");
+			print_screen("\r\n [h]Menu info.");
+			print_screen("\r\n [q]quit.");
+			print_screen("\r\n -------------------------------------------------------------");
+			
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+		else 
+		{
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+
+		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+		{
+			print_screen("\r\n Select optional is [%c]", selectOption);
+		}
+		
+		switch (selectOption) {
+			case 'a':
+			case 'A':
+				test_nand_flash();
+				isFirst = TRUE;
+				break;
+			
+			case 'o':
+			case 'O':
+				/*
+				 * Nand启动不允许测试Nor，
+				 * 因为Nand启动0地址读写的是SRAM而不是Nor Flash
+				 * 但是Nor启动可以测试Nand
+				 */
+				if (isBootFromNorFlash()){
+					test_nor_flash();
+				}
+				else{
+					print_screen("\r\n Current is boot from Nand Flash.");
+					print_screen("\r\n Address 0x0 at SRAM, Can't running Nor Flash Test");
+				}
+				isFirst = TRUE;
+				break;
+
 				break;
 
 			case '?':
@@ -746,4 +1018,4 @@ void test_nand_flash(void)
 	return;
 }
 
-#endif /* TEST_OBJ_NAND_FLASH */
+#endif /* #if (defined TEST_OBJ_NOR_FLASH) || (defined TEST_OBJ_NAND_FLASH) */

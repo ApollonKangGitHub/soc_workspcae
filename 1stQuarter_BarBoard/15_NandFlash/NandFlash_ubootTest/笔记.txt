@@ -59,7 +59,7 @@ md.l 4E000004 1
 mw.l 4E000004 0x01							<----bit1=0，片选Nand Flash
 mw.b 4E000008 0x0							<----发出读命令	
 
-/* 地址5Bytes，3Bytes列地址 ，2byte行地址，现在读取0地址，5Byte全0 */
+/* 地址5Bytes，3Bytes列地址（2^12 = 2048 Bytes/Page），2byte行地址(2^8 = 256Pages)，现在读取0地址，5Byte全0 */
 mw.b 4E00000C 0x0							<----Col addr byte 0
 mw.b 4E00000C 0x0							<----Col addr byte 1
 mw.b 4E00000C 0x0							<----Col addr byte 2

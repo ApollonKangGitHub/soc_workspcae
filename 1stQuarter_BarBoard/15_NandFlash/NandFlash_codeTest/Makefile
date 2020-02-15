@@ -38,6 +38,18 @@ THUMB_INSTRUCTION_TEST = FALSE
 UNDF_INSTRUCTION_EXCEPTION = FALSE
 #软件终端异常
 SWI_EXCEPTION = FALSE
+#Nand 启动测试，需要保证代码重定位的code、SDRAM初始化的code、NorFlash的code等，
+#其编译后在前4K位置，以确保在代码重定位之前可以正常初始化完毕，以及随后功能正常
+#中断的执行代码不放在前4K，只要确保不会有中断打断初始化过程即可，init很快，因此
+#正常来讲内部中断、外部中断也只是在初始化完成后才开始初始化中断并使用，
+#但是如果在初始化代码重定位完成前，真的有中断产生，中断处理的代码还必须放在前4K
+NAND_BOOT_TEST = TRUE
+
+ifeq ($(NAND_BOOT_TEST), TRUE) 
+	CC += -D TEST_NAND_COMMENT_USELESS_CODE=TRUE
+else 
+	CC += -D TEST_NAND_COMMENT_USELESS_CODE=FALSE
+endif 
 
 ifeq ($(THUMB_INSTRUCTION_TEST), TRUE) 
 	CC += -D SOC_S3C2440_THUMB_INSTRUCTION_TEST=TRUE
@@ -61,22 +73,25 @@ endif
 
 START = start.o
 #ASMFILE = lib1funcs.o
-OBJS = ./soc_s3c2440.o
+
+OBJS += ./src/memCtrl/memCtrl.o
+OBJS += ./src/nand_flash/nand_flash.o
+OBJS += ./src/soc_s3c2440_init.o
 OBJS += ./src/uart/uart.o
+OBJS += ./src/exception/interrupt.o
 OBJS += ./src/led/led.o
 OBJS += ./src/tools/tools.o
 OBJS += ./src/log/syslog.o
-OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/test/test.o
 OBJS += ./src/exception/exception.o
-OBJS += ./src/exception/interrupt.o
 OBJS += ./src/timer/timer.o
 OBJS += ./src/nor_flash/nor_flash.o
-OBJS += ./src/nand_flash/nand_flash.o
+OBJS += ./soc_s3c2440.o
 
-ALLOBJS := $(START)
-ALLOBJS += $(ASMFILE)
+ALLOBJS := 
+ALLOBJS += $(START)
 ALLOBJS += $(OBJS)
+ALLOBJS += $(ASMFILE)
 
 DEP_FILES := $(patsubst %.o,%.d,$(OBJS))
 DEP_FILES := $(wildcard $(DEP_FILES))

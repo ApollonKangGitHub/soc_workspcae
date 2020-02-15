@@ -55,6 +55,20 @@ void tool_getRoundingRemainder
 	*remain = high;
 }
 
+/* 取整运算，为不支持取整运算编译器提供（仅支持取证操作数是的倍数的运算） */
+uint32 tool_get_binary_multiple(uint32 big, uint32 small)
+{
+	uint32 bigTemp = big;
+	uint32 smallTem = small;
+	
+	while (smallTem)
+	{
+		bigTemp >>= 1;
+		smallTem >>= 1;
+	}
+
+	return bigTemp;
+}
 
 /* 
  * 大端存储高位存在低字节，低位存在高字节，类似于数据按字符串存储，
@@ -326,8 +340,9 @@ void print_byteHex(uint8 value)
 
 void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 {
-	int start = 0;
-	int over = 0;
+	int lineStart = 0;
+	int lineOver = 0;
+	int printEnd = 0;
 	int indexAddr = 0;
 	int index = 0;
 	char strBuf[_TOOL_PRINT_HEX_STR_LEN_];
@@ -335,30 +350,30 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 
 	set_buffer(strBuf, 0, sizeof(strBuf));
 	print_screen("\r\n-------------------------------------------------------------");
-
-	start = startAddr / 16 * 16;
-	over = startAddr + len;
 	
-	if (over % 16) {
-		over = ((over / 16 + 1) * 16);
+	lineStart = startAddr / 16 * 16;
+	printEnd = startAddr + len;
+	
+	if (printEnd % 16) {
+		lineOver = ((printEnd / 16 + 1) * 16);
 	}
 	else {
-		over = (over / 16 * 16);
+		lineOver = (printEnd / 16 * 16);
 	}
 
-	for (indexAddr = start; indexAddr < over; indexAddr++)
+	for (indexAddr = lineStart; indexAddr < lineOver; indexAddr++)
 	{
 		index = indexAddr - startAddr;
 		
 		/* 先打印十六进制值，再打印字符 */
-		if (0 == (indexAddr % 16) || (indexAddr == start))
+		if (0 == (indexAddr % 16) || (indexAddr == lineStart))
 		{
 			print_screen("\r\n [buffer:%x] ", indexAddr);			
 		}
 
 		/* 打印十六进制 */
 		if ((indexAddr < startAddr) 
-			|| (indexAddr >= startAddr + len))
+			|| (indexAddr >= printEnd))
 		{
 			print_screen("%c%c%c", 0x20, 0x20, 0x20);	
 		}
@@ -375,7 +390,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 		}
 		/* 不属于打印范围但是要格式化补全的一行 */
 		else if ((indexAddr < startAddr) 
-			|| (indexAddr >= startAddr + len))
+			|| (indexAddr >= printEnd))
 		{
 			strBuf[indexAddr % 16] = ' ';
 		}
@@ -386,7 +401,7 @@ void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr)
 		}
 
 		/* 打印缓存的字符 */
-		if ((0 == (indexAddr+1) % 16) && (indexAddr != start))
+		if ((0 == (indexAddr+1) % 16) && (indexAddr != lineStart))
 		{
 			print_screen(" | %s |", strBuf);
 			set_buffer(strBuf, 0, sizeof(strBuf));
