@@ -21,8 +21,11 @@ typedef enum{
 }soc_test_t;
 
 
-/* SDRAM不超限测试 */
-#define SDRAM_BASE_ADDR (0x30000000)
+/* 
+ * SDRAM不超限测试(SDRAM0已经被用于重定位，所以用SDRAM1测试，
+ * 否则SDRAM0测试时重写内容会导致代码段被破坏) 
+ */
+#define SDRAM_BASE_ADDR (0x38000000)
 #define SDRAM_OPERATOR_TEST_TIMES	(1024 * 1024 * 32)
 
 #define SDRAM_OPERATOR_LEN (64) 	/* 复制内存对象长度 */

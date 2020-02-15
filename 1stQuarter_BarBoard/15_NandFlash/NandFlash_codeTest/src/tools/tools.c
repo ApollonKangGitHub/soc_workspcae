@@ -544,9 +544,9 @@ char * get_string(char * str, uint32 len, GET_STRING_FLAG flag)
 			/* 换行或空格(flag为获取单词，而非整行)结束输入 */
 			tool_putChar(s[i]);
 			if('\r' == s[i]){
-				tool_putChar('\n');
-			}else if('\n' == s[i]){
 				tool_putChar('\r');
+			}else if('\n' == s[i]){
+				tool_putChar('\n');
 			}
 			s[i] = '\0';
 			break;

@@ -4,30 +4,44 @@
 #include <log.h>
 #include <soc_s3c2440_public.h>
 
+#define NAND_FLASH_READ_BYTE()		(NFDATAr)
+#define NAND_FLASH_WRITE_BYTE(val)	(NFDATAr = (volatile uint8)(val))
+#define	NAND_FALSH_SELECT()			(NFCONTr &= ~(NAND_nFCE_CTRL_DISABLE << 1))
+#define NAND_FALSH_DESELECT()		(NFCONTr |= (NAND_nFCE_CTRL_DISABLE << 1))
+
+/* NFSTATr寄存器的 "RnB input pin." 不为高电平则处于忙状态 */
+#define NAND_FALSH_WAIT_READY(void) \
+	while(NFSTAT_RnB_STAT_READY_STATUS != (NFSTATr & NFSTAT_RnB_STAT_BUSY_BITSf));
+
 static void nand_flash_cmd_byte(uint8 cmd)
 {
-	uint8 delay = 10;
 	volatile uint8 i = 0;
 	
 	NFCMDr = cmd; 
-	for(i = 0; i < delay; i++);	/* 延时保证数据稳定 */
+	for(i = 0; i < 10; i++);	/* 延时保证数据稳定 */
 }
 
 static void nand_flash_addr_byte(uint8 addr)
 {
-	uint8 delay = 10;
 	volatile uint8 i = 0;
 	
 	NFADDRr = addr; 
-	for(i = 0; i < delay; i++);	/* 延时保证数据稳定 */
+	for(i = 0; i < 10; i++);	/* 延时保证数据稳定 */
 }
 
-/* 发送flash地址 */
-static uint8 nand_flash_data_byte(void)
+/* 发出地址(读操作、写操作) */
+static void nand_flash_addr_page_offset(uint32 page, uint32 offset)
 {
-	volatile uint8 data = 0x0;
-	data = NFDATAr;
-	return data;
+	/* 2Byte offset Addr,3Byte Page Addr */
+	
+	/* offset Addr */
+	nand_flash_addr_byte(offset & 0xFF);
+	nand_flash_addr_byte((offset >> 8) & 0xFF);
+	
+	/* Page Addr */
+	nand_flash_addr_byte(page & 0xFF);
+	nand_flash_addr_byte((page >> 8) & 0xFF);
+	nand_flash_addr_byte((page >> 16) & 0xFF);
 }
 
 void nand_flash_init(void)
@@ -52,29 +66,19 @@ void nand_flash_init(void)
 			| (NAND_NAND_CONTOLLER_ENABLE << 0);
 }
 
-static void nand_flash_select(BOOL enable)
-{
-	if (enable)
-	{
-		/* 使能片选 */
-		NFCONTr &= ~(NAND_nFCE_CTRL_DISABLE << 1);
-	}
-	else
-	{
-		NFCONTr |= (NAND_nFCE_CTRL_DISABLE << 1);
-	}
-}
 
-void nand_flash_info_display(void)
+/* 获取块个数和每个块的页个数 */
+void nand_flash_get_mem_info(nand_flash_info_t * info)
 {
-	uint8 dataBuf[5];
+	uint8 * pData = NULL;
 	uint8 pageSizeSelect = 0;
 	uint8 blkSizeSelect = 0;
 	uint8 planeNumSelect = 0;
 	uint8 planeSizeSelect = 0;
-	
+	pData = (uint8 *)(info->idInfo);
+
 	/* 使能片选 */
-	nand_flash_select(TRUE);
+	NAND_FALSH_SELECT();
 
 	/* 写命令：读ID */
 	nand_flash_cmd_byte(__NAND_FLASH_READ_ID_CMD__);
@@ -83,42 +87,33 @@ void nand_flash_info_display(void)
 	nand_flash_addr_byte(__NAND_FLASH_READ_ID_ADDR__);
 
 	/* 读数据 */
-	set_buffer(dataBuf, 0, sizeof(dataBuf));
-	dataBuf[_NAND_FLASH_ID_MAKER_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_DEVICE_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_3rd_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_4th_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_5th_] = nand_flash_data_byte();
+	set_buffer(pData, 0, sizeof(pData));
+	pData[_NAND_FLASH_ID_MAKER_] = NAND_FLASH_READ_BYTE();
+	pData[_NAND_FLASH_ID_DEVICE_] = NAND_FLASH_READ_BYTE();
+	pData[_NAND_FLASH_ID_3rd_] = NAND_FLASH_READ_BYTE();
+	pData[_NAND_FLASH_ID_4th_] = NAND_FLASH_READ_BYTE();
+	pData[_NAND_FLASH_ID_5th_] = NAND_FLASH_READ_BYTE();
 	
 	/* 根据ID信息计算页信息、块信息 */
-	pageSizeSelect = (dataBuf[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_PAGE_SIZE_MASK_;
-	blkSizeSelect = (dataBuf[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_BLK_SIZE_MASK_;
-	planeNumSelect = (dataBuf[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_NUM_SHIFT_) & _NAND_FLASH_5th_PLANE_NUM_MASK_;
-	planeSizeSelect = (dataBuf[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_SIZE_SHIFT_) & _NAND_FLASH_5th_PLANE_SIZE_MASK_;
+	pageSizeSelect = (pData[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_PAGE_SIZE_MASK_;
+	blkSizeSelect = (pData[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_BLK_SIZE_MASK_;
+	planeNumSelect = (pData[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_NUM_SHIFT_) & _NAND_FLASH_5th_PLANE_NUM_MASK_;
+	planeSizeSelect = (pData[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_SIZE_SHIFT_) & _NAND_FLASH_5th_PLANE_SIZE_MASK_;
 
 	/* 禁用片选 */
-	nand_flash_select(FALSE);
+	NAND_FALSH_DESELECT();	
 
-	/* 打印相关信息 */
-	print_screen("\r\n Maker Id code  :0x");	print_byteHex(dataBuf[_NAND_FLASH_ID_MAKER_]);
-	print_screen("\r\n Device Id code :0x");	print_byteHex(dataBuf[_NAND_FLASH_ID_DEVICE_]);
-	print_screen("\r\n 3rd Id Byte    :0x");	print_byteHex(dataBuf[_NAND_FLASH_ID_3rd_]);
-	print_screen("\r\n 4th Id Byte    :0x");	print_byteHex(dataBuf[_NAND_FLASH_ID_4th_]);
-	print_screen("\r\n 5th Id Byte    :0x");	print_byteHex(dataBuf[_NAND_FLASH_ID_5th_]);
-	print_screen("\r\n Page Size      :%dKB", _NAND_FLASH_4th_PAGE_SIZE_BASE_ << pageSizeSelect);
-	print_screen("\r\n Block Size     :%dKB", _NAND_FLASH_4th_BLK_SIZE_BASE_ << blkSizeSelect);
-	print_screen("\r\n Plane number   :%d",  _NAND_FLASH_5th_PLANE_NUM_BASE_ << planeNumSelect);
-	print_screen("\r\n Plane Size     :%dMB",  _NAND_FLASH_5th_PLANE_SIZE_BASE_ << planeSizeSelect);
+	/* 计算总大小，根据总大下和块大小、页大小计算块个数和每个块里页个数 */
+	info->planeNum = _NAND_FLASH_5th_PLANE_NUM_BASE_ << planeNumSelect;
+	info->planeSize = _NAND_FLASH_PLANE_CELL_ * (_NAND_FLASH_5th_PLANE_SIZE_BASE_ << planeSizeSelect);
+	info->blkSize = _NAND_FLASH_BLOCK_CELL_ * (_NAND_FLASH_4th_BLK_SIZE_BASE_ << blkSizeSelect);
+	info->pageSize = _NAND_FLASH_PAGE_CELL_ * (_NAND_FLASH_4th_PAGE_SIZE_BASE_ << pageSizeSelect);
+	info->totalSize = info->planeNum * info->planeSize;
+		
+	/* 计算块个数和每个块的页个数 */
+	info->blkNum = tool_get_binary_multiple(info->totalSize, info->blkSize);
+	info->pagePerBlk = tool_get_binary_multiple(info->blkSize, info->pageSize);
 }
-
-/* NFSTATr寄存器的 "RnB input pin." 不为高电平则处于忙状态 */
-void nand_flash_wait_ready(void)
-{
-	while(NFSTAT_RnB_STAT_READY_STATUS != (NFSTATr & NFSTAT_RnB_STAT_BUSY_BITSf)){
-		continue;
-	}
-}
-
 
 /*
  * Nand Flash结构
@@ -145,34 +140,26 @@ void  nand_flash_data_read(uint32 addr, uint8 * buf, uint32 len)
 	uint32 offset = addr % NAND_FLASH_PAGE_SIZE;
 
 	/* 启用片选 */
-	nand_flash_select(TRUE);
+	NAND_FALSH_SELECT();
 
 	while (index < len)
 	{
 		/* 发出读命令 */
 		nand_flash_cmd_byte(__NAND_FLASH_READ_DATA_CMD__);
-		
-		/* 发出地址,3Byte offset Addr，2Byte Page Addr */
 
-		/* offset Addr */
-		nand_flash_addr_byte(offset & 0xFF);
-		nand_flash_addr_byte((offset >> 8) & 0xFF);
-		
-		/* Page Addr */
-		nand_flash_addr_byte(page & 0xFF);
-		nand_flash_addr_byte((page >> 8) & 0xFF);
-		nand_flash_addr_byte((page >> 16) & 0xFF);
+		/* 发出页地址和偏移地址 */
+		nand_flash_addr_page_offset(page, offset);
 		
 		/* 发出读数据地址确认命令 */
 		nand_flash_cmd_byte(__NAND_FLASH_READ_DATA_ADDR_CMD__);
 		
 		/* 等待数据 */
-		nand_flash_wait_ready();
+		NAND_FALSH_WAIT_READY();
 
 		/* 读page的所有数据数据 */
 		while ((offset < NAND_FLASH_PAGE_SIZE) && (index < len))
 		{
-			buf[index] = nand_flash_data_byte();
+			buf[index] = NAND_FLASH_READ_BYTE();
 			offset++;
 			index++;
 		}
@@ -183,7 +170,7 @@ void  nand_flash_data_read(uint32 addr, uint8 * buf, uint32 len)
 	}
 
 	/* 禁用片选 */
-	nand_flash_select(FALSE);
+	NAND_FALSH_DESELECT();
 }
 
 void nand_flash_oob_read(uint32 addr, uint8 * buf, uint32 len)
@@ -193,34 +180,26 @@ void nand_flash_oob_read(uint32 addr, uint8 * buf, uint32 len)
 	uint32 offset = (addr % NAND_FLASH_OOB_SIZE) + NAND_FLASH_PAGE_SIZE;
 
 	/* 启用片选 */
-	nand_flash_select(TRUE);
+	NAND_FALSH_SELECT();
 
 	while (index < len)
 	{
 		/* 发出读命令 */
 		nand_flash_cmd_byte(__NAND_FLASH_READ_DATA_CMD__);
-		
-		/* 发出地址,3Byte offset Addr，2Byte Page Addr */
 
-		/* offset Addr */
-		nand_flash_addr_byte(offset & 0xFF);
-		nand_flash_addr_byte((offset >> 8) & 0xFF);
-		
-		/* Page Addr */
-		nand_flash_addr_byte(page & 0xFF);
-		nand_flash_addr_byte((page >> 8) & 0xFF);
-		nand_flash_addr_byte((page >> 16) & 0xFF);
+		/* 发出页地址和偏移地址 */
+		nand_flash_addr_page_offset(page, offset);
 		
 		/* 发出读数据地址确认命令 */
 		nand_flash_cmd_byte(__NAND_FLASH_READ_DATA_ADDR_CMD__);
 		
 		/* 等待数据 */
-		nand_flash_wait_ready();
+		NAND_FALSH_WAIT_READY();
 
 		/* 读page的所有OOB数据 */
 		while ((offset < NAND_FLASH_PAGE_END) && (index < len))
 		{
-			buf[index] = nand_flash_data_byte();
+			buf[index] = NAND_FLASH_READ_BYTE();
 			offset++;
 			index++;
 		}
@@ -231,59 +210,11 @@ void nand_flash_oob_read(uint32 addr, uint8 * buf, uint32 len)
 	}
 
 	/* 禁用片选 */
-	nand_flash_select(FALSE);
-}
-
-/* 获取块个数和每个块的页个数 */
-static void nand_flash_get_blk_page_num(uint32 *blkNum, uint32* pageNum)
-{
-	uint8 dataBuf[5];
-	uint8 pageSizeSelect = 0;
-	uint8 blkSizeSelect = 0;
-	uint8 planeNumSelect = 0;
-	uint8 planeSizeSelect = 0;
-	uint32 totalSize = 0;
-	uint32 blkSize= 0;
-	uint32 pageSize= 0;
-
-	/* 使能片选 */
-	nand_flash_select(TRUE);
-
-	/* 写命令：读ID */
-	nand_flash_cmd_byte(__NAND_FLASH_READ_ID_CMD__);
-
-	/* 写地址 */
-	nand_flash_addr_byte(__NAND_FLASH_READ_ID_ADDR__);
-
-	/* 读数据 */
-	set_buffer(dataBuf, 0, sizeof(dataBuf));
-	dataBuf[_NAND_FLASH_ID_MAKER_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_DEVICE_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_3rd_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_4th_] = nand_flash_data_byte();
-	dataBuf[_NAND_FLASH_ID_5th_] = nand_flash_data_byte();
-	
-	/* 根据ID信息计算页信息、块信息 */
-	pageSizeSelect = (dataBuf[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_PAGE_SIZE_MASK_;
-	blkSizeSelect = (dataBuf[_NAND_FLASH_ID_4th_] >> _NAND_FLASH_4th_PAGE_SIZE_SHIFT_) & _NAND_FLASH_4th_BLK_SIZE_MASK_;
-	planeNumSelect = (dataBuf[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_NUM_SHIFT_) & _NAND_FLASH_5th_PLANE_NUM_MASK_;
-	planeSizeSelect = (dataBuf[_NAND_FLASH_ID_5th_] >> _NAND_FLASH_5th_PLANE_SIZE_SHIFT_) & _NAND_FLASH_5th_PLANE_SIZE_MASK_;
-
-	/* 禁用片选 */
-	nand_flash_select(FALSE);	
-
-	/* 计算总大小，根据总大下和块大小、页大小计算块个数和每个块里页个数 */
-	totalSize = _NAND_FLASH_PLANE_CELL_ * (_NAND_FLASH_5th_PLANE_SIZE_BASE_ << planeSizeSelect);
-	blkSize = _NAND_FLASH_BLOCK_CELL_ * (_NAND_FLASH_4th_BLK_SIZE_BASE_ << blkSizeSelect);
-	pageSize = _NAND_FLASH_PAGE_CELL_ * (_NAND_FLASH_4th_PAGE_SIZE_BASE_ << pageSizeSelect);
-
-	/* 计算块个数和每个块的页个数 */
-	*blkNum = tool_get_binary_multiple(totalSize, blkSize);
-	*pageNum = tool_get_binary_multiple(blkSize, pageSize);
+	NAND_FALSH_DESELECT();
 }
 
 /* 检查某一页是否坏掉 */
-static BOOL nand_flash_bad_page_check(uint32 pageIdx)
+static BOOL test_nand_flash_bad_page_check(uint32 pageIdx)
 {
 	uint8 buf[NAND_FLASH_OOB_SIZE];
 	uint32 start = 0;
@@ -300,7 +231,7 @@ static BOOL nand_flash_bad_page_check(uint32 pageIdx)
 }
 
 /* 检查指定块是否坏块 */
-static BOOL nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum)
+BOOL test_nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum)
 {
 	uint32 pageIndex = 0;
 	BOOL isBadPage = FALSE;
@@ -310,7 +241,7 @@ static BOOL nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum)
 	blkStartPage = blkIdx * pageNum;
 	for (pageIndex = 0; pageIndex < pageNum; pageIndex++)
 	{
-		isBadPage = nand_flash_bad_page_check(blkStartPage + pageIndex);
+		isBadPage = test_nand_flash_bad_page_check(blkStartPage + pageIndex);
 		if (isBadPage) {
 			//print_screen("\r\n Block %d page %d is bad page.", blkIdx, pageIndex);
 			isBadBlk = TRUE;
@@ -321,29 +252,110 @@ static BOOL nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum)
 	return isBadBlk;
 }
 
-/* flash坏块检查 */
-void nand_flash_check(void)
-{
-	uint32 blkNum = 0;
-	uint32 pageNum = 0;
-	uint32 blkIndex = 0;
-	BOOL isBadBlk = FALSE;
-	BOOL isBad = FALSE;
 
-	nand_flash_get_blk_page_num(&blkNum, &pageNum);
-	print_screen("\r\n Total have %d blocks, Per block have %d pages.", blkNum, pageNum);
+/* Nand Flash是以Block为单位擦除的，即使len < sizeof(block) */
+int nand_flash_earse(uint32 addr, int len)
+{
+	uint32 index = 0;
+	uint32 page = 0;
+	int earseLen = len;
+	uint32 earseAddr = addr;
+	nand_flash_info_t info;
+	uint32 blksizeMask = 0x0;
+	uint32 mask = 0x1;
 	
-	for (blkIndex = 0; blkIndex < blkNum; blkIndex++)
-	{
-		isBadBlk = nand_flash_bad_blk_check(blkIndex, pageNum);
-		if (isBadBlk) {
-			print_screen("\r\n Block %d is bad block.", blkIndex);
-			isBad = TRUE;
-		}
-	}
+	set_buffer((uint8*)(&info), 0, sizeof(info));
+	nand_flash_get_mem_info(&info);
+	blksizeMask = info.blkSize >> 1;
 	
-	if (!isBad) 
+	/* blksize是2的幂次方，可以直接这样取mask */
+	while (blksizeMask >> 1)
 	{
-		print_screen("\r\n All blocks are ok.", blkIndex);
+		mask |= (mask << 1);
+		blksizeMask >>= 1;
 	}
+
+	/* 
+	 * 如果不是每个块的开始地址，则返回错误
+	 * 或者长度不是整个块大小的倍数返回错误
+	 */
+	if ((earseAddr & mask) || (earseLen & mask))
+	{
+		print_screen("\r\n Invalid addr[%d] or len[%d]!!!", earseAddr, earseLen);
+		print_screen("\r\n Address and length must be a multiple of block size %d", info.blkSize);
+		return ERROR;
+	}
+
+	/* 启用片选 */
+	NAND_FALSH_SELECT();
+
+	while (earseLen > 0)
+	{
+		page = earseAddr / NAND_FLASH_PAGE_SIZE;
+		
+		/* 发出读命令 */
+		nand_flash_cmd_byte(__NAND_FLASH_EARSE_CMD__);
+		
+		/* 发出地址,3Byte Page Addr */
+		nand_flash_addr_byte(page & 0xFF);
+		nand_flash_addr_byte((page >> 8) & 0xFF);
+		nand_flash_addr_byte((page >> 16) & 0xFF);
+		
+		/* 发出读数据地址确认命令 */
+		nand_flash_cmd_byte(__NAND_FLASH_EARSE_ADDR_CMD__);
+		
+		/* 等待Nand解除busy状态 */
+		NAND_FALSH_WAIT_READY();
+
+		/* 一次擦除一个块 */
+		earseLen -= info.blkSize;
+		earseAddr +=info.blkSize;
+	}
+
+	/* 禁用片选 */
+	NAND_FALSH_DESELECT();
+	return OK;
 }
+
+
+/* Nand Flash读操作 */
+void nand_flash_write(uint32 addr, uint8 *buf, uint32 len)
+{
+	uint32 index = 0;
+	uint32 page = addr / NAND_FLASH_PAGE_SIZE;
+	uint32 offset = addr % NAND_FLASH_PAGE_SIZE;
+
+	/* 启用片选 */
+	NAND_FALSH_SELECT();
+
+	while (index < len)
+	{
+		/* 发出写命令 */
+		nand_flash_cmd_byte(__NAND_FLASH_WRITE_CMD__);
+		
+		/* 发出页地址和偏移地址 */
+		nand_flash_addr_page_offset(page, offset);
+
+		/* 发出一页数据 */
+		while ((offset < NAND_FLASH_PAGE_SIZE) && (index < len))
+		{
+			NAND_FLASH_WRITE_BYTE(buf[index]);
+			offset++;
+			index++;
+		}
+		
+		/* 发出写数据结束命令 */
+		nand_flash_cmd_byte(__NAND_FLASH_WRITE_DATA_OVER_CMD__);
+		
+		/* 等待Nand解除busy状态 */
+		NAND_FALSH_WAIT_READY();
+
+		/* 烧写下一页 */
+		offset = 0;
+		page++;
+	}
+	
+	/* 禁用片选 */
+	NAND_FALSH_DESELECT();
+}
+

@@ -26,7 +26,8 @@
 #define TEST_OBJ_NOR_FLASH
 #define TEST_OBJ_NAND_FLASH
 
-#define TEST_FLASH_OP_LEN_MAX 	(1024)
+#define TEST_FLASH_EARSE_MAX	(65535)
+#define TEST_FLASH_OP_LEN_MAX 	(255)
 static uint8 gDataBuf[TEST_FLASH_OP_LEN_MAX];	
 
 /* 调试函数 */
@@ -140,7 +141,6 @@ void test_led_uart(void)
 	uint32 choose = -1;
 
 	set_buffer(str, 0, sizeof(str));
-	uart_init();
 	led_init();
 	/* 内存控制器与点灯逻辑、uart混合测试 */
 	while(1){
@@ -221,9 +221,6 @@ void test_sdram(void)
 	/* 注：对于裸机编译，需要声明字符串数组长度，否则会报错：  undefined reference to 'memcpy' */
 	char *str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@";
 	
-	uart_init();
-	sdram_init(SOC_MEMCTRL_BANK_SDRAM_ALL);
-	
 	/* sdram base address */
 	volatile uint8 * sdram_base_addr = (volatile uint8 *)(SDRAM_BASE_ADDR);
 
@@ -240,8 +237,8 @@ void test_sdram(void)
 		 * lib1funcs.S文件有对于这些指令的支持，但是编译器对应版本编译有问题，暂时先不管
 		 */
 		 if(i % SDRAM_PRINT_CYCLE == 0){
-			print_screen("[write sdram <%d MB>, <%d KB>, [%%d]]      \r", 
-				i / 0x100000, (i % 0x100000) / 0x400, i / (SDRAM_OPERATOR_TEST_TIMES/100));
+			print_screen("[write sdram <%d MB>, <%d KB>,   \r", 
+				i / 0x100000, (i % 0x100000) / 0x400, i / (SDRAM_OPERATOR_TEST_TIMES/100), i, i);
 		}
 		i++;
 	}
@@ -471,14 +468,14 @@ void test_nor_flash_earse(void)
 	uint32 earseLen = 0;	
 
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", sizeof(uint16));
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
 	if (tool_atoux((const char *)str, &startAddr))
 	{
 		/* 获取长度 */
-		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_FLASH_OP_LEN_MAX);
+		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_FLASH_EARSE_MAX);
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
@@ -568,7 +565,7 @@ void test_nor_flash_write(void )
 	if (tool_atoux((const char *)str, &writeAddr))
 	{
 		/* 获取要写的值 */
-		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX - 1);
+		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX);
 		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 		(void)get_line(gDataBuf, sizeof(gDataBuf));
 		writeLen = tool_strlen(gDataBuf);
@@ -691,6 +688,42 @@ void test_nor_flash(void)
 	return;
 }
 
+/* 由于Nand启动时SRAM代码不宜过多，因此对于Nand Test，display、坏块检查入口函数都放在这里 */
+static void nand_flash_info_display(void)
+{
+	nand_flash_info_t info;
+	uint32 gbbyte; 
+	uint32 mbbyte; 
+	uint32 kbbyte;
+	uint32 byte;
+
+	set_buffer((uint8*)(&info), 0, sizeof(info));
+	(void)nand_flash_get_mem_info(&info);
+
+	/* 打印相关信息 */
+	print_screen("\r\n Maker Id code            :0x");	print_byteHex(info.idInfo[_NAND_FLASH_ID_MAKER_]);
+	print_screen("\r\n Device Id code           :0x");	print_byteHex(info.idInfo[_NAND_FLASH_ID_DEVICE_]);
+	print_screen("\r\n 3rd Id Byte              :0x");	print_byteHex(info.idInfo[_NAND_FLASH_ID_3rd_]);
+	print_screen("\r\n 4th Id Byte              :0x");	print_byteHex(info.idInfo[_NAND_FLASH_ID_4th_]);
+	print_screen("\r\n 5th Id Byte              :0x");	print_byteHex(info.idInfo[_NAND_FLASH_ID_5th_]);
+
+	print_screen("\r\n Plane number             :%d", info.planeNum);
+	print_screen("\r\n Block number             :%d", info.blkNum);
+	print_screen("\r\n Per block page number    :%d", info.pagePerBlk);
+
+	tool_calc_mem_size(info.planeSize, &gbbyte, &mbbyte, &kbbyte, &byte);
+	print_screen("\r\n Plane Size               :%dGB-%dMB", gbbyte, mbbyte);
+	
+	tool_calc_mem_size(info.totalSize, &gbbyte, &mbbyte, &kbbyte, &byte);
+	print_screen("\r\n Total Size               :%dGB-%dMB", gbbyte, mbbyte);
+	
+	tool_calc_mem_size(info.pageSize, &gbbyte, &mbbyte, &kbbyte, &byte);
+	print_screen("\r\n Page Size                :%dMB-%dKB", mbbyte, kbbyte);
+	
+	tool_calc_mem_size(info.blkSize, &gbbyte, &mbbyte, &kbbyte, &byte);
+	print_screen("\r\n Block Size               :%dMB-%dKB", mbbyte, kbbyte);
+}
+
 void test_nand_flash_scan(void)
 {
 	/* 打印厂家ID、设备ID、页大小、块大小等信息 */
@@ -715,7 +748,7 @@ void test_nand_flash_data_read(void)
 	if (tool_atoux((const char *)str, &startAddr))
 	{
 		/* 获取长度 */
-		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
+		print_screen("\r\n Enter read bytes number[1~%d]:", TEST_FLASH_OP_LEN_MAX);
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
@@ -812,13 +845,124 @@ err_ret:
 	return;
 }
 
+/* flash坏块检查 */
+static void test_nand_flash_check_all_blk(void)
+{
+	uint32 blkIndex = 0;
+	BOOL isBadBlk = FALSE;
+	BOOL isBad = FALSE;
+	nand_flash_info_t info;
+
+	set_buffer((uint8*)(&info), 0, sizeof(info));
+	nand_flash_get_mem_info(&info);
+	print_screen("\r\n Total have %d blocks, Per block have %d pages.", info.blkNum, info.pagePerBlk);
+	
+	for (blkIndex = 0; blkIndex < info.blkNum; blkIndex++)
+	{
+		isBadBlk = test_nand_flash_bad_blk_check(blkIndex, info.blkNum);
+		if (isBadBlk) {
+			print_screen("\r\n Block %d is bad block.", blkIndex);
+			isBad = TRUE;
+		}
+	}
+	
+	if (!isBad) 
+	{
+		print_screen("\r\n All blocks are ok.", blkIndex);
+	}
+}
+
+
 /* 检查坏块测试 */
-void test_nand_flash_bad_blk_check(void)
+void test_nand_flash_check(void)
 {
 	print_screen("\r\n\r\n -------------------------------------------------------------");
-	nand_flash_check();
+	test_nand_flash_check_all_blk();
 	print_screen("\r\n\r\n -------------------------------------------------------------");
 }
+
+void test_nand_flash_earse(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 startAddr = 0x0;
+	uint32 earseLen = 0;	
+	int ret = OK;
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter earse bytes number[1~%d]:", TEST_FLASH_EARSE_MAX);
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
+		
+		if (tool_atoui((const char *)str, &earseLen))
+		{
+			print_screen("\r\n Input startAddr:%x, earseLen:%d", startAddr, earseLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	ret = nand_flash_earse(startAddr, earseLen);
+	if (ret != OK)
+	{
+		print_screen("\r\n Earse Failed!!");
+	}
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+
+void test_nand_flash_write(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 writeAddr = 0x0;
+	uint16 writeVal = 0;	
+	int writeLen = 0;
+	int i = 0;
+	int j = 1;
+	
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for write[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &writeAddr))
+	{
+		/* 获取要写的值 */
+		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX - 1);
+		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+		(void)get_line(gDataBuf, sizeof(gDataBuf));
+		writeLen = tool_strlen(gDataBuf);
+		print_screen("\r\n write %s len is %d", gDataBuf, writeLen);
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	nand_flash_write(writeAddr, gDataBuf, writeLen);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
 
 /* 注意，由于此时还不支持NAND flash的代码重定位，因此下载到Nor中去操作Nandflash */
 void test_nand_flash(void)
@@ -879,7 +1023,7 @@ void test_nand_flash(void)
 		{
 			print_screen("\r\n Select optional is [%c]", selectOption);
 		}
-		
+
 		switch (selectOption) {
 			case 's':
 			case 'S':
@@ -898,17 +1042,17 @@ void test_nand_flash(void)
 			
 			case 'c':
 			case 'C':
-				test_nand_flash_bad_blk_check();
+				test_nand_flash_check();
 				break;
 			
 			case 'e':
 			case 'E':
-				//test_nand_flash_earse();
+				test_nand_flash_earse();
 				break;
 			
 			case 'w':
 			case 'W':
-				//test_nand_flash_write();
+				test_nand_flash_write();
 				break;
 						
 			case '?':
@@ -994,8 +1138,6 @@ void test_flash(void)
 				isFirst = TRUE;
 				break;
 
-				break;
-
 			case '?':
 			case 'h':
 				ismenuChoose = TRUE;
@@ -1014,7 +1156,7 @@ void test_flash(void)
 				break;
 		}
 	}
-	
+
 	return;
 }
 

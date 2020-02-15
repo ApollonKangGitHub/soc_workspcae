@@ -17,6 +17,9 @@
 #define BOOL int
 #endif
 
+#define OK		(0)
+#define ERROR	(-1)
+
 #define TOOL_STR_CMP_EQUAL			(0)
 #define TOOL_STR_CMP_GREATER(pos) 	(pos)
 #define TOOL_STR_CMP_LESS(pos)		(-(pos))

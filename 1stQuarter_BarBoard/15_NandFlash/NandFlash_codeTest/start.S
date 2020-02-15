@@ -174,8 +174,7 @@ app_start:
 	
 sdram_start:
 	/* UART init */
-	BL uart_init
-	BL test_start
+	BL uart_init	
 
 	/* jump to soc_s3c2440_main run */
 	BL soc_s3c2440_main

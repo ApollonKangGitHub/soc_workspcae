@@ -34,6 +34,14 @@
 #define __NAND_FLASH_READ_DATA_CMD__		(0x0)
 /* 发出读数据地址确认命令 */
 #define __NAND_FLASH_READ_DATA_ADDR_CMD__	(0x30)
+/* 发出擦除命令 */
+#define __NAND_FLASH_EARSE_CMD__			(0x60)
+/* 发送擦除数据地址确认命令 */
+#define __NAND_FLASH_EARSE_ADDR_CMD__		(0xD0)
+/* 发出写数据命令 */
+#define __NAND_FLASH_WRITE_CMD__			(0x80)
+/* 发送写数据结束命令 */
+#define __NAND_FLASH_WRITE_DATA_OVER_CMD__	(0x10)
 /* 读ID的起始地址 */
 #define __NAND_FLASH_READ_ID_ADDR__			(0x0)
 
@@ -43,6 +51,7 @@
 #define _NAND_FLASH_ID_3rd_			(2)
 #define _NAND_FLASH_ID_4th_			(3)
 #define _NAND_FLASH_ID_5th_			(4)
+#define _NAND_FLASH_ID_BYTES_		(5)
 
 /* 页大小 */
 #define _NAND_FLASH_4th_PAGE_SIZE_BASE_		(1)
@@ -74,11 +83,26 @@
 #define _NAND_FLASH_BLOCK_CELL_				(1 << 10)		/* KB为单位 */
 #define _NAND_FLASH_PAGE_CELL_				(1 << 10)		/* KB为单位 */
 
-extern void nand_flash_info_display(void);
+/* nand Flash信息 */
+typedef struct nand_flash_info
+{
+	uint8 idInfo[_NAND_FLASH_ID_BYTES_];
+	uint32 planeNum;
+	uint32 planeSize;
+	uint32 blkNum;
+	uint32 blkSize;
+	uint32 pagePerBlk;
+	uint32 pageSize;
+	uint32 totalSize;
+}nand_flash_info_t;
+
 extern void nand_flash_init(void);
+extern void nand_flash_get_mem_info(nand_flash_info_t * info);
 extern void nand_flash_data_read(uint32 addr, uint8 * buf, uint32 len);
 extern void nand_flash_oob_read(uint32 addr, uint8 * buf, uint32 len);
-extern void nand_flash_check(void);
+extern BOOL test_nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum);
+extern int nand_flash_earse(uint32 addr, int len);
+extern void nand_flash_write(uint32 addr, uint8 *buf, uint32 len);
 
 #endif	/* _NAND_FLASH_H_ */
 
