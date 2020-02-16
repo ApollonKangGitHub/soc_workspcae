@@ -1,0 +1,22 @@
+第020课 SPI
+
+第001节_SPI协议介绍
+
+第002节_使用GPIO实现SPI协议操作OLED
+
+第003节_SPI_FLASH编程_读ID
+
+第004节_SPI_FLASH编程_读写
+
+第005节_在OLED上显示ADC的值
+
+第006节_使用SPI控制器
+
+第007节_移植到MINI2440_TQ2440
+
+注意: 以前的代码只支持NAND启动
+作业：
+把05th_spi_i2c_adc_jz2440_spi_controller_020_006
+移植到022_i2c_019\005th_i2c_ok_019_007(它支持NAND、NOR启动)
+
+

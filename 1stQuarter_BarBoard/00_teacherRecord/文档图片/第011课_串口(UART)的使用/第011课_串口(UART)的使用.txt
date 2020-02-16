@@ -1,0 +1,27 @@
+ 
+串口(UART)的使用
+参考资料: <嵌入式LINUX应用开发完全手册>(韦东山著) 第11章、s3c2440芯片手册
+UART: Universal Asynchronous Receiver and Transmitter
+
+1. 辅线1_硬件知识_UART硬件介绍
+
+2. S3C2440 UART编程
+作业：putchar在没有读到数据时会一直死等，
+      实现一个putchar_nowait函数, 有串口数据就读出来，没有串口数据就立刻返回错误
+
+第003节_从零实现用于裸机调试的printf函数_手动确定可变参数
+
+第004节_从零实现用于裸机调试的printf函数_自动确定可变参数
+
+第005节_从零实现用于裸机调试的printf函数_printf函数在x86和arm平台的实现
+作业: printf函数是把输出信息直接从串口输出了，
+      有时候我们要得到这些信息，比如后面的LCD程序中，想在LCD上显示这些信息时，就要先得到这些信息再一次性的输出到LCD。
+	  实现这个函数：int snprintf(char *str, size_t size, const char *format, ...);
+	  它会把输出信息先保存在str里。
+	  提示: printf函数中最终使用__out_putchar进行打印，你也许可以修改它，把字符保存在str中。
+	  
+
+
+
+
+

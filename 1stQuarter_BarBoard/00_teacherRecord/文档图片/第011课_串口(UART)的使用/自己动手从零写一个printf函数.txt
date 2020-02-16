@@ -1,0 +1,86 @@
+
+
+从零写一个用于裸机程序调试的printf函数
+
+自己写c语言应用程序的时候，经常会使用printf来打印。
+
+	
+
+printf在是一个标准库函数，功能是：打印(变量、字符串)等等。
+
+
+问题：能不能依据printf的原理，写一个简易的用于裸机程序调试的my_printf函数呢？
+好处：1)my_printf函数在单片机、嵌入式芯片裸机调试过程中非常方便。
+	  2)my_printf函数可以帮你打印寄存器的值、变量的值、打印字符串等。
+
+
+//====================================================
+printf的声明
+int printf(const char *format, ...);
+format:固定参数
+...   :可变参数(变参)
+
+
+printf中的格式字符
+
+//====================================================
+可变参数
+
+1）c语言指针的复习
+
+2）代码：手工确定可变参数
+
+3）代码：自动确定可变参数
+
+#include <stdarg.h>
+
+va_list    p;            
+va_start(p,fmt );         
+va_arg( p, int);          
+va_end( p );             
+
+vc6.0中的stdarg.h
+typedef char *  va_list;
+//当sizeof(n)=1/2/4时,_INTSIZEOF(n)等于4
+#define _INTSIZEOF(n)   ( (sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1) )
+
+/*
+	va_start(p, format )  ( p = (char *)&format + _INTSIZEOF(format) )
+						  ( p = (char *)&format + _INTSIZEOF(char *) )
+						  ( p = (char *)&format + 4 )
+*/
+#define va_start(ap,v)  ( ap = (va_list)&v + _INTSIZEOF(v) )
+#define va_arg(ap,t)    ( *(t *)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)) )
+#define va_arg(ap,t)    (ap = ap + _INTSIZEOF(t), *(t *)(ap - _INTSIZEOF(t)))
+#define va_arg(ap,t)    (*(t *)(ap = ap + _INTSIZEOF(t), ap - _INTSIZEOF(t)))
+
+/*
+#define va_end(ap)      ( ap = (char *)0 )	
+*/
+#define va_end(ap)      ( ap = (va_list)0 )	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

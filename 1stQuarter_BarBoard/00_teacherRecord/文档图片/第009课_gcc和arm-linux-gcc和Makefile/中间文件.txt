@@ -1,0 +1,70 @@
+book@www.100ask.org:/work/gcc_options/1th$ gcc --help
+Usage: gcc [options] file...
+Options:
+  --help                   Display this information
+  -v                       Display the programs invoked by the compiler
+  -E                       Preprocess only; do not compile, assemble or link
+  -S                       Compile only; do not assemble or link
+  -c                       Compile and assemble, but do not link 
+  -o <file>                Place the output into <file>
+
+
+链接就是将汇编生成的OBJ文件、系统库的OBJ文件、库文件链接起来，
+最终生成可以在特定平台运行的可执行程序。
+  
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+
+book@www.100ask.org:/work/gcc_options/1th$ gcc -v -o hello hello.o
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
+Target: x86_64-linux-gnu
+Configured with: ../src/configure -v --with-pkgversion='Ubuntu 5.4.0-6ubuntu1~16.04.4' --with-bugurl=file:///usr/share/doc/gcc-5/README.Bugs --enable-languages=c,ada,c++,java,go,d,fortran,objc,obj-c++ --prefix=/usr --program-suffix=-5 --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --with-sysroot=/ --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-gnu-unique-object --disable-vtable-verify --enable-libmpx --enable-plugin --with-system-zlib --disable-browser-plugin --enable-java-awt=gtk --enable-gtk-cairo --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-5-amd64/jre --enable-java-home --with-jvm-root-dir=/usr/lib/jvm/java-1.5.0-gcj-5-amd64 --with-jvm-jar-dir=/usr/lib/jvm-exports/java-1.5.0-gcj-5-amd64 --with-arch-directory=amd64 --with-ecj-jar=/usr/share/java/eclipse-ecj.jar --enable-objc-gc --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+Thread model: posix
+gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4)
+COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/
+LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'hello' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbhavbV.res 
+ -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s 
+ -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc 
+ -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id 
+ --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed 
+ -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro 
+ -o hello 
+ /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o 
+ /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o 
+ /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o 
+ -L/usr/lib/gcc/x86_64-linux-gnu/5 
+ -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu 
+ -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib 
+ -L/lib/x86_64-linux-gnu -L/lib/../lib 
+ -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib 
+ -L/usr/lib/gcc/x86_64-linux-gnu/5/../../..  
+ hello.o 
+ -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed 
+ /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o 
+ /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
+book@www.100ask.org:/work/gcc_options/1th$
+
+
+
+
+
+动态链接使用动态链接库进行链接，生成的程序在执行的时候需要加载所需的动态库才能运行。
+动态链接生成的程序体积较小，但是必须依赖所需的动态库，否则无法执行。
+
+静态链接使用静态库进行链接，生成的程序包含程序运行所需要的全部库，可以直接运行，
+不过静态链接生成的程序体积较大。

@@ -1,0 +1,56 @@
+第013课 代码重定位
+
+1. 段的概念_重定位的引入
+
+
+2. 链接脚本的引入与简单测试
+参考资料:
+Using LD, the GNU linker
+http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html
+
+3. 链接脚本的解析
+
+4. 拷贝代码和链接脚本的改进
+a. 拷贝代码要改进
+b. 链接脚本要改进
+
+5. 代码重定位与位置无关码
+怎么写位置无关的程序：
+使用位置无关码! 不使用绝对地址! 最根本的办法是看反汇编
+a. 调用程序时使用B/BL相对跳转指令
+b. 重定位之前, 不可使用绝对地址，比如：
+   不可访问全局变量/静态变量
+   不可访问有初始值的数组(因为初始值放在rodata里，使用绝对地址来访问)
+c. 重定位之后, 使用绝对跳转命令跳到Runtime Addr，比如：
+    ldr pc, =main
+
+6. 重定位_清除BSS段的C函数实现
+
+C代码中如何使用链接脚本中定义的变量
+http://www.100ask.org/bbs/forum.php?mod=viewthread&tid=16231&highlight=%C1%B4%BD%D3%BD%C5%B1%BE
+
+参考文章：https://sourceware.org/ml/binutils/2007-07/msg00154.html
+
+C函数怎么使用lds文件中的变量abc?
+a. 在C函数中声明改变量为extern类型, 比如:
+    extern int abc;
+	
+b. 使用时, 要取址, 比如:
+     int *p = &abc;  // p的值即为lds文件中abc的值
+	 
+作业：
+(1).使用printf函数打印以下信息:
+	volatile unsigned int *dest = (volatile unsigned int *)&__code_start;
+	volatile unsigned int *end = (volatile unsigned int *)&__bss_start;
+	volatile unsigned int *src = (volatile unsigned int *)0;
+a. 打印dest, end, src的值
+b. 打印dest, end, src所指向的地址的值
+
+(2). 修改链接脚本，把程序重定位到0x32000000
+     再观察上述打印结果
+
+
+
+
+
+

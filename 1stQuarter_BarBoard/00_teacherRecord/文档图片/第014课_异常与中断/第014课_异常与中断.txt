@@ -1,0 +1,94 @@
+第014课 异常与中断
+
+1. 概念引入与处理流程
+
+2. CPU模式(Mode)_状态(State)与寄存器
+7种Mode: usr/sys
+         undefined(und)
+		 Supervisor(svc)
+		 Abort(abt)
+		 IRQ(irq)
+		 FIQ(fiq)
+2种State:  ARM state
+           Thumb state
+寄存器: 通用寄存器
+        备份寄存器(banked register)
+		当前程序状态寄存器(Current Program Status Register) : CPSR
+		CPSR的备份寄存器: SPSR(Saved Program Status Register)
+
+参考书籍: 杜春雷<ARM体系结构与编程>
+
+
+3. 不重要_Thumb指令集程序示例
+
+GCC的ARM编译选项
+https://www.cnblogs.com/QuLory/archive/2012/10/23/2735226.html
+https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
+
+Getting GCC to compile without inserting call to memcpy
+https://stackoverflow.com/questions/6410595/getting-gcc-to-compile-without-inserting-call-to-memcpy
+
+
+4. und异常模式程序示例
+http://web.mit.edu/gnu/doc/html/as_7.html
+作业：程序有2个BUG
+a. 014_und_exception_014_004/001有一个BUG，把以下字符串多加一个字符，看看程序还能否运行。
+und_string:
+	.string "undefined instruction exception"
+   尝试分析反汇编，找到原因(实在找不到的话，下一节视频有讲)
+
+b. 014_und_exception_014_004/002有一个BUG，把start.S中"bl print1"去掉，
+   看看未定义指令异常会不会发生
+   如果能自己解决这个BUG，那么绝对学到家了。
+   我用了整整一个上午才发现原因(哈，我先不说原因，后面的视频也没有讲)。
+   这BUG是一个同学发现的，原因是我找出来的。
+   
+	
+
+5. swi异常模式程序示例
+swi: software interrupt
+
+作业: 实际上LINUX系统中app调用的open, read等函数就是通过执行swi命令触发异常，在异常处理函数中实现文件的打开、读写功能。
+      我们可以实现类似的功能，写一个 led_ctrl 汇编函数:
+a. 它可以接收1个参数
+b. 它会在栈中保存参数
+c. 它调用swi #val，这个val来自所接收的参数
+d. 恢复参数、返回	  
+      修改swi异常处理函数，
+a. 根据val来点灯、灭灯	  
+       修改main函数，调用 led_ctrl(0),led_ctrl(1)
+
+
+6. 按键中断程序示例_概述与初始化
+
+7. 按键中断程序示例_完善
+
+作业：对于按键S2，使用快中断支持它。
+a. 编写FIQ的中断处理函数，实现保存环境、恢复环境的功能
+b. 编写按制的中断处理函数，实现点灯、灭灯功能
+c. 修改中断控制器，把S2对应的INTMOD设置为FIQ
+
+8. 定时器中断程序示例
+参考书籍<<嵌入式Linux应用开发完全手册>>第10章
+使用定时器来点灯实现计数
+
+作业：最后一个程序用到了函数指针、注册中断等概念。
+      这对C语言的要求越来越高。
+	  main函数中用到这3个初始化函数，
+	led_init();
+	interrupt_init();
+	key_eint_init();
+	  把它们放在一个函数指针数组里，用一个for循环逐个调用
+
+	  		
+
+
+MOVS总是会影响CPSR, 包括N,Z,C标志位，执行MOVS pc, lr时，CPSR会被SPSR覆盖(内核态，USER和SYSTEM模式下没有SPSR）
+
+'^'是一个后缀标志,不能在User模式和Sys系统模式下使用该标志.该标志有两个存在目的:
+     a.对于LDM操作,同时恢复的寄存器中含有pc(r15)寄存器,那么指令执行的同时cpu自动将spsr拷贝到cpsr中
+如:在UND中断返回代码中
+ldmfd sp!, {r0-r13,pc}^//当指令执行完毕,pc跳转之前,将spsr的值自动拷贝到cpsr中
+     b.数据的送入、送出发生在User用户模式下的寄存器,而非当前模式寄存器
+如:ldmdb sp,{r0 - lr}^;表示sp栈中的数据回复到User分组寄存器r0-lr中,而不是恢复到当前模式寄存器r0-lr
+
