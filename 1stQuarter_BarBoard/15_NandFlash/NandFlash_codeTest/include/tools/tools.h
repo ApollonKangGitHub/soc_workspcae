@@ -27,7 +27,7 @@
 #define TOOL_MAX_INT_STR_LEN		(11)
 
 typedef char * va_list;
-typedef unsigned int uint32;
+typedef unsigned long uint32;
 typedef unsigned short uint16;
 typedef unsigned char uint8;
 
@@ -43,7 +43,7 @@ typedef unsigned char uint8;
 #define va_arg(ap,t)		(*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
 #define va_end(ap)			(ap = (va_list)(0))
 
-#define _TOOL_GET_STRING_LEN_		(255)
+#define _TOOL_GET_STRING_LEN_		(64)
 #define _TOOL_PRINT_HEX_STR_LEN_	(20)
 
 #define _TOOL_KB_BASE_		(1 << 10)

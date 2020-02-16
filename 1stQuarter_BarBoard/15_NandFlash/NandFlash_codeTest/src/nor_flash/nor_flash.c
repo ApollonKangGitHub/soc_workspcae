@@ -3,6 +3,8 @@
 #include <nor_flash.h>
 #include <log.h>
 
+#define NOR_FLASH_SECTOR_NUMER_MAX	(128)
+
 /*
  * 如果：在nor flash测试时同时打开了定时器中断的测试用例，CPU可能挂死
  * 原因是读取NOR厂商信息以及CFI信息等信息时不处于reset模式，
@@ -138,6 +140,7 @@ void nor_flash_read_multi(uint8 * buf, int len, uint32 * addr)
 	}
 }
 
+
 /* 等待擦除或者写操作完成 */
 static void nor_flash_wait_program_ready(uint32 offset)
 {
@@ -155,15 +158,90 @@ static void nor_flash_wait_program_ready(uint32 offset)
 	}
 }
 
+/* 根据擦除的范围，计算出擦除的地址所在扇区起始地址的集合 */
+static uint32 nor_flash_earse_get_sector_start_addr_arr
+(
+	uint32 addr, 			/* 擦除起始地址 */
+	uint32 len, 			/* 擦除长度 */
+	uint32 * blkAddrSet, 	/* 擦除扇区起始地址集合 */
+	uint32 setLen			/* 集合成员最大个数 */
+)
+{
+	uint16 regionNum = 0;
+	uint16 regionInfoBase = 0x0;
+	uint16 blockNum = 0;
+	uint32 blockSize = 0;
+	uint32 blockIndex = 0;
+	uint32 regionIndex = 0;
+	uint32 blkCnt = 0;
+	uint32 startAddr = addr;
+	uint32 endAddr = addr + len;
+	uint32 curBlkAddr = __NOR_FLASH_BASE__;
+	uint32 nextBlkAddr = __NOR_FLASH_BASE__;
+	
+	/* 进入CFI模式 */
+	NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_CFI__);
+
+	/*
+	 * 计算各扇区起始地址
+	 * 名词解释：
+	 * 1. Erase block region：一个region含有一个/多个block，其大小一致
+	 * 即一个NOR FLASH中有一个/多个region，不同region区分不同大小的block
+     *
+	 * 2. Erase block region information (refer to the CFI publication 100)
+	 * 共4个Bytes:
+	 * 前两个Bytes值 + 1		  : 表示该region有多少个bolck
+	 * 后两个Bytes值 * 256	   : 表示该region中block的大小
+	 */
+	regionNum = NOR_FLASH_DATA(__NOR_FLASH_REGION_NUM_OFFSET__);
+
+	/* 读取每个region的信息 */
+	regionInfoBase = __NOR_FLASH_REGION_INFO_OFFSET__;
+	for (regionIndex = 0; (regionIndex < regionNum) && (blkCnt < setLen); regionIndex++)
+	{
+		blockNum = 1 + NOR_FLASH_DATA(regionInfoBase) + (NOR_FLASH_DATA(regionInfoBase+1) << 8);
+		blockSize = 256 * (NOR_FLASH_DATA(regionInfoBase+2) + (NOR_FLASH_DATA(regionInfoBase+3) << 8));
+
+		/* 保存每个block的起始地址 */
+		for (blockIndex = 0; (blockIndex < blockNum) && (blkCnt < setLen); blockIndex++)
+		{
+			curBlkAddr = nextBlkAddr;
+			nextBlkAddr += blockSize;
+			if (((startAddr >= curBlkAddr) && (startAddr < nextBlkAddr))	/* 第一个擦除的sector */
+				|| ((blkCnt > 0) && (endAddr >= curBlkAddr))				/* 第一块之后连续的sector */)		
+			{
+				blkAddrSet[blkCnt] = curBlkAddr;
+				blkCnt++;
+			}
+		}
+		
+		regionInfoBase += 4;
+	}
+	
+	/* 退出CFI模式(reset) */
+	NOR_FLASH_RESUME_DEFAULT_MODE;
+
+	return blkCnt;
+}
+
+
 /* 
- * 发现擦除少量内容却把擦除的不止这些，先记录下来，后面再看
+ * 发现擦除连续少量字节，实际擦除的不止这些，先记录下来，后面再看。2020-2-16 12:45:48，
+ * 经过试验发现，擦除时，无论擦除的长度是多少，都是以地址所在块全部擦除来操作的
+ * 因此一个sector擦出一次即可（按照首地址擦除）
  */
 void nor_flash_earse_multi(uint32 * addr, int len)
 {
 	int cnt = 0;
 	volatile uint32 earseAddr = (uint32)addr;
+	uint32 blkCnt = 0;
+	uint32 blkIndex = 0;
+	uint32 SectorAddrSet[NOR_FLASH_SECTOR_NUMER_MAX];
 
-	while(cnt < len)
+	set_buffer((uint8 *)(SectorAddrSet), 0xFF, NOR_FLASH_SECTOR_NUMER_MAX << 2);
+	blkCnt = nor_flash_earse_get_sector_start_addr_arr(earseAddr, len, SectorAddrSet, NOR_FLASH_SECTOR_NUMER_MAX);
+
+	while(blkIndex < blkCnt)
 	{
 		/* 解锁 */
 		NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_UNLOCK__);
@@ -177,12 +255,11 @@ void nor_flash_earse_multi(uint32 * addr, int len)
 		NOR_FLASH_CMD(__NOT_FLASH_ADDR_2nd_BUS_CYCLE__, __NOR_FLASH_CMD_2nd_BUS_CYCLE_UNLOCK__);
 
 		/* 发出扇区地址 */
-		NOR_FLASH_CMD(earseAddr >> __NOR_FLASH_A0_OFFSET_CPU__, __NOR_FLASH_CMD_6th_BUS_CYCLE_SECTOR_EARSE_);
+		NOR_FLASH_CMD((SectorAddrSet[blkIndex] >> __NOR_FLASH_A0_OFFSET_CPU__), __NOR_FLASH_CMD_6th_BUS_CYCLE_SECTOR_EARSE_);
 
-		nor_flash_wait_program_ready(earseAddr);
-		//print_screen("\r\n Earse success, addr:%x, total len=%d, cnt:%d", earseAddr, len, cnt);
-		cnt++;
-		earseAddr++;
+		nor_flash_wait_program_ready(SectorAddrSet[blkIndex]);
+		print_screen("\r\n Earse Sector %d[addr:%x] succeed!!", blkIndex, SectorAddrSet[blkIndex]);
+		blkIndex++;
 	}
 }
 

@@ -490,8 +490,8 @@ int tool_strlen(char * str)
 
 /*
  * 获取串口输入，以空格或回车结束
- * 这里有个坑，如果传入的值是大于255的，超过255的部分传进来就被截断了
- * 先注释出来，随后排查原因
+ * 这里有个坑，如果传入的值是大于255的，超过255的部分传进来就被截断了，先注释出来，随后排查原因；
+ * 2020-2-16 12:11:38：uint8 loop_max = len截断了，我靠，太不细心了
  */
 char * get_word(char * str, uint32 len)
 {
@@ -509,16 +509,16 @@ char * get_string(char * str, uint32 len, GET_STRING_FLAG flag)
 {
 	char *s = str;
 	char ch = 0;
-	uint8 loop_max = len;
-	uint8 i = 0;
+	uint32 loop_max = len;
+	uint32 i = 0;
 
 	if(NULL == str){
 		return NULL;
 	}
 
-	if (len <= 0)
+	if (loop_max == 0)
 	{
-		print_screen("\r\n------------------get_string error len :%d", loop_max);
+		print_screen("\r\n get_string error len :%d", loop_max);
 		return NULL;
 	}
 	

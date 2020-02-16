@@ -26,8 +26,9 @@
 #define TEST_OBJ_NOR_FLASH
 #define TEST_OBJ_NAND_FLASH
 
-#define TEST_FLASH_EARSE_MAX	(65535)
-#define TEST_FLASH_OP_LEN_MAX 	(255)
+/* 依次最多擦除1M */
+#define TEST_FLASH_EARSE_MAX	(1 << 20)
+#define TEST_FLASH_OP_LEN_MAX 	(1024)
 static uint8 gDataBuf[TEST_FLASH_OP_LEN_MAX];	
 
 /* 调试函数 */
@@ -468,7 +469,7 @@ void test_nor_flash_earse(void)
 	uint32 earseLen = 0;	
 
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", sizeof(uint16));
+	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
@@ -492,8 +493,9 @@ void test_nor_flash_earse(void)
 	{
 		goto err_ret;
 	}
-
+	print_screen("\r\n -------------------------------------------------------------");
 	nor_flash_earse_multi((uint32 *)startAddr, earseLen);
+	print_screen("\r\n -------------------------------------------------------------");
 	return;
 	
 err_ret:
@@ -565,7 +567,7 @@ void test_nor_flash_write(void )
 	if (tool_atoux((const char *)str, &writeAddr))
 	{
 		/* 获取要写的值 */
-		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX);
+		print_screen("\r\n Enter string for write(max len %d):", sizeof(gDataBuf));
 		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 		(void)get_line(gDataBuf, sizeof(gDataBuf));
 		writeLen = tool_strlen(gDataBuf);
@@ -741,14 +743,14 @@ void test_nand_flash_data_read(void)
 	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	print_screen("\r\n Enter start address for read[addr format 0x0~0xFFFFFFFF]:");
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
 	if (tool_atoux((const char *)str, &startAddr))
 	{
 		/* 获取长度 */
-		print_screen("\r\n Enter read bytes number[1~%d]:", TEST_FLASH_OP_LEN_MAX);
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
 		set_buffer(str, 0, sizeof(str));
 		(void)get_word(str, sizeof(str));
 		
@@ -792,7 +794,7 @@ void test_nand_flash_oob_read(void)
 	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for oob[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	print_screen("\r\n Enter start address for oob[addr format 0x0~0xFFFFFFFF]:");
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
@@ -889,7 +891,7 @@ void test_nand_flash_earse(void)
 	int ret = OK;
 
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	print_screen("\r\n Enter start address for earse[addr format 0x0~0xFFFFFFFF]:");
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
@@ -937,14 +939,14 @@ void test_nand_flash_write(void)
 	int j = 1;
 	
 	/* 获取地址 */
-	print_screen("\r\n Enter start address for write[addr format 0x0~%x]:", NOR_FLASH_MAX_ADDR);
+	print_screen("\r\n Enter start address for write[addr format 0x0~0xFFFFFFFF]:");
 	set_buffer(str, 0, sizeof(str));
 	(void)get_word(str, sizeof(str));
 	
 	if (tool_atoux((const char *)str, &writeAddr))
 	{
 		/* 获取要写的值 */
-		print_screen("\r\n Enter string for write(max len %d):", TEST_FLASH_OP_LEN_MAX - 1);
+		print_screen("\r\n Enter string for write(max len %d):", sizeof(gDataBuf));
 		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
 		(void)get_line(gDataBuf, sizeof(gDataBuf));
 		writeLen = tool_strlen(gDataBuf);

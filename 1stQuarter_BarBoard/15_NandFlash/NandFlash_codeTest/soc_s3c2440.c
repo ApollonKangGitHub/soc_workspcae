@@ -3,6 +3,14 @@
 #include <soc_s3c2440_public.h>
 #define ENUM_TYPE_TO_STR(type) #type
 
+/*
+ * 2020-2-16 02:40:51
+ * switch case 的case条件命名满足，但是就是每次都进的是default
+ * 用print_screen打印出来获取的输入字符也是满足case条件的，但是就是进不了case
+ * 后来发现是串口问题，换了个串口就好了，很奇怪，难道是串口驱动有问题？
+ */
+
+
 /* 测试用例名称，和枚举soc_test_t结构保持一致 */
 static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_LED),
