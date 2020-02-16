@@ -3,7 +3,14 @@ CC += -O0
 
 #即使加了volatile，uint16的读写操作（strh/ldrh）也可能被分成两次读写uint8的指令(ldrb/strb)
 #使用ARM v4版本的指令编译，保证不会发生以上问题，如果发生可能导致数据访问不同步，
-CC += -march=armv4
+#CC += -march=armv4
+#armv4版本还是有问题，lib1funcs.s编译不过
+#lib1funcs.s:221: Error: selected processor does not support `clz r3,r1'
+CC += -march=armv5te
+
+#指定连接库文
+LIBPATH :=
+LIBPATH +=-lgcc -L/opt/FriendlyARM/toolschain/4.4.3/lib/gcc/arm-none-linux-gnueabi/4.4.3/
 
 #直接-Tdata 0x30000000重定位到SDRAM是行不通的，
 #因为code段默认从0地址开始，data段和代码段之间就存在一大片未使用的地址
@@ -72,7 +79,7 @@ else
 endif 
 
 START = start.o
-#ASMFILE = lib1funcs.o
+ASMFILE = lib1funcs.o
 
 OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/nand_flash/nand_flash.o
@@ -105,7 +112,7 @@ endif
 
 $(TARGETP_ROJECT):$(ALLOBJS)
 	@echo "commpile project $(TARGETP_ROJECT) is running..." && \
-	$(LD) $(START) $(OBJS) -o $@.elf && \
+	$(LD) $(START) $(OBJS) $(LIBPATH) -o $@.elf && \
 	$(OBJCOPY) -O binary -S $@.elf $@.bin && \
 	$(OBJDUMP) -D $@.elf > $@.dis && \
 	echo "link all files to target file $(TARGETP_ROJECT).bin succeed!" || \

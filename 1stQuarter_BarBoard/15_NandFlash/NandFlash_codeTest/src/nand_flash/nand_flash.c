@@ -111,8 +111,8 @@ void nand_flash_get_mem_info(nand_flash_info_t * info)
 	info->totalSize = info->planeNum * info->planeSize;
 		
 	/* 计算块个数和每个块的页个数 */
-	info->blkNum = tool_get_binary_multiple(info->totalSize, info->blkSize);
-	info->pagePerBlk = tool_get_binary_multiple(info->blkSize, info->pageSize);
+	info->blkNum = info->totalSize / info->blkSize;
+	info->pagePerBlk = info->blkSize / info->pageSize;
 }
 
 /*
@@ -261,28 +261,20 @@ int nand_flash_earse(uint32 addr, int len)
 	int earseLen = len;
 	uint32 earseAddr = addr;
 	nand_flash_info_t info;
-	uint32 blksizeMask = 0x0;
-	uint32 mask = 0x1;
-	
+	uint32 blkSize = 0;
+
 	set_buffer((uint8*)(&info), 0, sizeof(info));
 	nand_flash_get_mem_info(&info);
-	blksizeMask = info.blkSize >> 1;
-	
-	/* blksize是2的幂次方，可以直接这样取mask */
-	while (blksizeMask >> 1)
-	{
-		mask |= (mask << 1);
-		blksizeMask >>= 1;
-	}
+	blkSize = info.blkSize;
 
 	/* 
 	 * 如果不是每个块的开始地址，则返回错误
 	 * 或者长度不是整个块大小的倍数返回错误
 	 */
-	if ((earseAddr & mask) || (earseLen & mask))
+	if ((earseAddr % blkSize) || (earseLen % blkSize))
 	{
 		print_screen("\r\n Invalid addr[%d] or len[%d]!!!", earseAddr, earseLen);
-		print_screen("\r\n Address and length must be a multiple of block size %d", info.blkSize);
+		print_screen("\r\n Address and length must be a multiple of block size %d", blkSize);
 		return ERROR;
 	}
 
@@ -308,8 +300,8 @@ int nand_flash_earse(uint32 addr, int len)
 		NAND_FALSH_WAIT_READY();
 
 		/* 一次擦除一个块 */
-		earseLen -= info.blkSize;
-		earseAddr +=info.blkSize;
+		earseLen -= blkSize;
+		earseAddr +=blkSize;
 	}
 
 	/* 禁用片选 */

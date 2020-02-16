@@ -2,6 +2,20 @@
 #include <uart.h>
 #include <log.h>
 
+
+/*
+ * 2020-2-16 15:44:27
+ * 解决编译问题：
+ * /opt/FriendlyARM/toolschain/4.4.3/lib/gcc/arm-none-linux-gnueabi/4.4.3//libgcc.a(_dvmd_lnx.o): In function `__div0':
+ * /opt/FriendlyARM/mini2440/build-toolschain/working/src/gcc-4.4.3/libgcc/../gcc/config/arm/lib1funcs.asm:1093: undefined reference to `raise'
+ * 代码参考u-boot-2012.04.01
+ */
+int raise (int signum)
+{
+	print_screen("raise: Signal # %d caught\n", signum);
+	return 0;
+}
+
 void tool_dealy(uint16 sec)
 {
 	int delay = 400000;
@@ -30,44 +44,6 @@ void tool_calc_mem_size
 	temp = temp % _TOOL_MB_BASE_;
 	*kbyte = temp / _TOOL_KB_BASE_;
 	*byte = temp % _TOOL_KB_BASE_;
-}
-
-/* 对给定非负数值取整和取余，THUMB指令集专用函数，效率极其低下 */
-void tool_getRoundingRemainder
-(
-	int target, 		/* 操作对象整数 */
-	int base,			/* 取余取整基数 */
-	int * round,		/* 取整结果 */
-	int * remain		/* 取余结果 */
-)
-{
-	int high = target;
-	int low = 0;
-	int roundTemp = 0;
-	
-	while (high >= base)
-	{
-		high -= base;
-		roundTemp++;
-	}
-	
-	*round = roundTemp;
-	*remain = high;
-}
-
-/* 取整运算，为不支持取整运算编译器提供（仅支持取证操作数是的倍数的运算） */
-uint32 tool_get_binary_multiple(uint32 big, uint32 small)
-{
-	uint32 bigTemp = big;
-	uint32 smallTem = small;
-	
-	while (smallTem)
-	{
-		bigTemp >>= 1;
-		smallTem >>= 1;
-	}
-
-	return bigTemp;
 }
 
 /* 
@@ -124,12 +100,8 @@ char * tool_itoa(uint32 value, char * str)
 	
 	/* 余数对应的ASCII码依次存放在数组中 */
 	while(high){
-#if (SOC_S3C2440_THUMB_INSTRUCTION_TEST == TRUE)
-		(void)tool_getRoundingRemainder(high, 10, &high, &low);
-#else
 		low = high % 10;
 		high = high / 10;
-#endif
 		str[i++] = low + '0';
 	}
 	
@@ -269,14 +241,9 @@ char * tool_ubtoxa(uint8 value, char * str)
 
 	temp |= value;
 
-#if (SOC_S3C2440_THUMB_INSTRUCTION_TEST == TRUE)
-	s[0] = base[(temp >> 4) & 0x0FFFFFFF];
-	s[1] = base[temp & 0x0000000F];
-#else
 	s[0] = base[temp / 16];
 	s[1] = base[temp % 16];
-#endif
-		
+
 	return str;
 }
 

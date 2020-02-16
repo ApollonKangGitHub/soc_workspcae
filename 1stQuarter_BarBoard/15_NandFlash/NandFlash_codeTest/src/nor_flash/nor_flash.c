@@ -178,6 +178,11 @@ static uint32 nor_flash_earse_get_sector_start_addr_arr
 	uint32 endAddr = addr + len;
 	uint32 curBlkAddr = __NOR_FLASH_BASE__;
 	uint32 nextBlkAddr = __NOR_FLASH_BASE__;
+
+	if (len == 0)
+	{
+		return 0;
+	}
 	
 	/* 进入CFI模式 */
 	NOR_FLASH_CMD(__NOT_FLASH_ADDR_1st_BUS_CYCLE__, __NOR_FLASH_CMD_1st_BUS_CYCLE_CFI__);

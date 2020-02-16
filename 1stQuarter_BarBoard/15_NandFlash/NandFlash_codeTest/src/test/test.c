@@ -208,13 +208,6 @@ void test_led_uart(void)
 #ifdef TEST_OBJ_SDRAM
 void test_sdram(void)
 {
-/* 
- * SDRAM 测试中大量存在取余取整，因此THUMB指令集暂时不测试SRAM，
- * 用的基本都是ARM指令集，也没必要 在THUMB指令集时测试SRAM
- */
-#if (SOC_S3C2440_THUMB_INSTRUCTION_TEST == TRUE)
-	print_screen("\r\nuse thumb instruction set!");/* do nothing */
-#else
 	int i = 0;
 	BOOL test_flag = TRUE;
 	uint32 error_read_count = 0;
@@ -236,6 +229,7 @@ void test_sdram(void)
 		 * 在编译阶段取余或取整基数必须是常量（常量宏或整数都可以），
 		 * 否则会报错：undefined reference to `__aeabi_idivmod'
 		 * lib1funcs.S文件有对于这些指令的支持，但是编译器对应版本编译有问题，暂时先不管
+		 * 2020年2月16日15:55:30，已经解决该编译问题，另外使用编译器自带除法库即可
 		 */
 		 if(i % SDRAM_PRINT_CYCLE == 0){
 			print_screen("[write sdram <%d MB>, <%d KB>,   \r", 
@@ -269,7 +263,6 @@ void test_sdram(void)
 	SOC_DEBUG_PRINT(SOC_DBG_NORMAL,
 		"\r\ntest sdram end, test result is %s,error count is %d!\r\n", 
 		test_flag ? "succeed" : "failure", test_flag ? 0 : error_read_count);
-#endif
 	/* read sdram */
 }
 #endif /* TEST_OBJ_SDRAM */
