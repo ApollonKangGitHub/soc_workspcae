@@ -105,6 +105,53 @@
 #define ADDR_WTCONr			(0x53000000)
 #define WTCONr				__REG_VALUE(ADDR_WTCONr)			/* watchDog timer control register */
 
+/* ################################################# GPIO register ####################################################### */
+#define ADDR_GPACONr		(0x56000000)				
+#define ADDR_GPADATr		(0x56000004)
+#define ADDR_GPARESRVED1r	(0x56000008)
+#define ADDR_GPARESRVED2r	(0x5600000C)
+#define	GPACONr				__REG_VALUE(ADDR_GPACONr)			/* GPA control register */	
+#define GPADATr				__REG_VALUE(ADDR_GPADATr)			/* GPA data register */
+#define GPARESRVED1r		__REG_VALUE(ADDR_GPARESRVED1r)		/* Reserved  */
+#define GPARESRVED2r		__REG_VALUE(ADDR_GPARESRVED2r)		/* Reserved  */
+
+
+#define ADDR_GPBCONr		(0x56000010)				
+#define ADDR_GPBDATr		(0x56000014)
+#define ADDR_GPBUPr			(0x56000018)
+#define ADDR_GPBRESRVEDr	(0x5600001C)
+#define	GPBCONr				__REG_VALUE(ADDR_GPBCONr)			/* GPB control register */	
+#define GPBDATr				__REG_VALUE(ADDR_GPBDATr)			/* GPB data register */
+#define GPBUPr				__REG_VALUE(ADDR_GPBUPr)			/* GPB pins Pull-up constrol register,0 is ebable */
+#define GPBRESRVEDr			__REG_VALUE(ADDR_GPBRESRVEDr)		/* Reserved  */
+
+#define ADDR_GPCCONr		(0x56000020)
+#define ADDR_GPCDATr		(0x56000024)
+#define ADDR_GPCUPr			(0x56000028)
+#define ADDR_GPCRESRVEDr	(0x5600002C)
+#define	GPCCONr				__REG_VALUE(ADDR_GPCCONr)			/* GPC control register */
+#define GPCDATr				__REG_VALUE(ADDR_GPCDATr)			/* GPC data register */
+#define GPCUPr				__REG_VALUE(ADDR_GPCUPr)			/* GPC pins Pull-up constrol register,0 is ebable */
+#define GPCRESRVEDr			__REG_VALUE(ADDR_GPCRESRVEDr)		/* Reserved  */
+
+#define ADDR_GPDCONr		(0x56000030)
+#define ADDR_GPDDATr		(0x56000034)
+#define ADDR_GPDUPr			(0x56000038)
+#define ADDR_GPDRESRVEDr	(0x5600003C)		
+#define	GPDCONr				__REG_VALUE(ADDR_GPDCONr)			/* GPD control register */
+#define GPDDATr				__REG_VALUE(ADDR_GPDDATr)			/* GPD data register */
+#define GPDUPr				__REG_VALUE(ADDR_GPDUPr)			/* GPD pins Pull-up constrol register,0 is ebable */
+#define GPDRESRVEDr			__REG_VALUE(ADDR_GPDRESRVEDr)		/* Reserved  */
+
+#define ADDR_GPECONr		(0x56000040)
+#define ADDR_GPEDATr		(0x56000044)
+#define ADDR_GPEUPr			(0x56000048)
+#define ADDR_GPERESRVEDr	(0x5600004C)
+#define	GPECONr				__REG_VALUE(ADDR_GPECONr)			/* GPE control register */
+#define GPEDATr				__REG_VALUE(ADDR_GPEDATr)			/* GPE data register */
+#define GPEUPr				__REG_VALUE(ADDR_GPEUPr)			/* GPE pins Pull-up constrol register,0 is ebable */
+#define GPERESRVEDr			__REG_VALUE(ADDR_GPERESRVEDr)		/* Reserved  */
+
 #define ADDR_GPFCONr		(0x56000050)
 #define ADDR_GPFDATr		(0x56000054)
 #define ADDR_GPFUPr			(0x56000058)
@@ -243,5 +290,55 @@
 #define NFSTATr						__REG_VALUE_BYTE(ADDR_NFSTATr)
 
 /* ################################################################################################################################## */
+
+/* ################################################# LCD CONTORLLER register ####################################################### */
+
+/* R/W LCD control n register */
+#define ADDR_LCDCON1r				(0X4D000000)	
+#define ADDR_LCDCON2r				(0x4D000004)
+#define ADDR_LCDCON3r				(0x4D000008)
+#define ADDR_LCDCON4r				(0x4D00000C)
+#define ADDR_LCDCON5r				(0x4D000010)
+
+#define LCDCON1r					__REG_VALUE(ADDR_LCDCON1r)
+#define LCDCON2r					__REG_VALUE(ADDR_LCDCON2r)
+#define LCDCON3r					__REG_VALUE(ADDR_LCDCON3r)
+#define LCDCON4r					__REG_VALUE(ADDR_LCDCON4r)
+#define LCDCON5r					__REG_VALUE(ADDR_LCDCON5r)
+
+
+#define ADDR_LCDSADDR1r				(0X4D000014)	/* STN/TFT: Frame buffer start address 1 register */
+#define ADDR_LCDSADDR2r				(0X4D000018)	/* STN/TFT: Frame buffer start address 2 register */
+#define ADDR_LCDSADDR3r				(0X4D00001C)	/* STN/TFT: Virtual screen address set */
+#define ADDR_REDLUTr				(0X4D000020)	/* STN: Red lookup table register */
+#define ADDR_GREENLUTr				(0X4D000024)	/* STN: Green lookup table register */
+#define ADDR_BLUELUTr				(0X4D000028)	/* STN: Blue lookup table register */
+/* NOTE: Address from 0x14A0002C to 0x14A00048 should not be used. This area is reserved for Test mode. */
+#define ADDR_DITHMODEr				(0X4D00004C)	/* STN: Dithering mode register. 
+													 * This register reset value is 0x00000 But, user can change this value to 0x12210.
+													 * (Refer to a sample program source for the latest value of this register.) */
+#define ADDR_TPALr					(0X4D000050)	/* TFT: Temporary palette register. 
+													 * This register value will be video data at next frame. */
+#define ADDR_LCDINTPNDr				(0X4D000054)	/* Indicate the LCD interrupt pending register */
+#define ADDR_LCDSRCPNDr				(0X4D000058)	/* Indicate the LCD interrupt source pending register */
+#define ADDR_LCDINTMSKr				(0X4D00005C)	/* Determine which interrupt source is masked. 
+													 * The masked interrupt source will not be serviced. */
+#define ADDR_TCONSELr				(0X4D000060)	/* This register controls the LPC3600/LCC3600 modes. */
+
+#define LCDSADDR1r					__REG_VALUE(ADDR_LCDSADDR1r)
+#define LCDSADDR2r					__REG_VALUE(ADDR_LCDSADDR2r)
+#define LCDSADDR3r					__REG_VALUE(ADDR_LCDSADDR3r)
+#define REDLUTr						__REG_VALUE(ADDR_REDLUTr)
+#define GREENLUTr					__REG_VALUE(ADDR_GREENLUTr)
+#define BLUELUTr					__REG_VALUE(ADDR_BLUELUTr)
+#define DITHMODEr					__REG_VALUE(ADDR_DITHMODEr)
+#define TPALr						__REG_VALUE(ADDR_TPALr)
+#define LCDINTPNDr					__REG_VALUE(ADDR_LCDINTPNDr)
+#define LCDSRCPNDr					__REG_VALUE(ADDR_LCDSRCPNDr)
+#define LCDINTMSKr					__REG_VALUE(ADDR_LCDINTMSKr)
+#define TCONSELr					__REG_VALUE(ADDR_TCONSELr)
+
+/* ################################################################################################################################## */
+
 
 #endif /* _SOC_S3C2440_REG_H_ */

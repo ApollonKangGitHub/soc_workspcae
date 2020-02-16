@@ -33,6 +33,8 @@ INCLUDE += -I ./include/timer/
 INCLUDE += -I ./include/log/
 INCLUDE += -I ./include/nor_flash/
 INCLUDE += -I ./include/nand_flash/
+INCLUDE += -I ./include/frameBuffer/
+INCLUDE += -I ./include/lcd/
 INCLUDE += -I ./include/test/
 
 CFLAGS = $(INCLUDE) 
@@ -93,6 +95,14 @@ OBJS += ./src/test/test.o
 OBJS += ./src/exception/exception.o
 OBJS += ./src/timer/timer.o
 OBJS += ./src/nor_flash/nor_flash.o
+OBJS += ./src/frameBuffer/frameBuffer.o
+OBJS += ./src/frameBuffer/font.o
+OBJS += ./src/frameBuffer/geometry.o
+OBJS += ./src/lcd/lcd_4_3.o
+OBJS += ./src/lcd/lcd_3_5.o
+OBJS += ./src/lcd/lcd_common.o
+OBJS += ./src/lcd/lcd_controller_s3c2440.o
+OBJS += ./src/lcd/lcd_controller_common.o
 OBJS += ./soc_s3c2440.o
 
 ALLOBJS := 

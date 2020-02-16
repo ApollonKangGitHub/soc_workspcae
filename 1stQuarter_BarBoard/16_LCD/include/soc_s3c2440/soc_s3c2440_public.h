@@ -9,5 +9,6 @@
 #include "soc_s3c2440_timer_field.h"
 #include "soc_s3c2440_uart_field.h"
 #include "soc_s3c2440_other_field.h"
+#include "soc_s3c2440_lcd_controller_field.h"
 
 #endif

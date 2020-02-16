@@ -25,6 +25,7 @@
 #define TEST_OBJ_THUMB_INSTRUCTION
 #define TEST_OBJ_NOR_FLASH
 #define TEST_OBJ_NAND_FLASH
+#define TEST_OBJ_LCD
 
 /* 依次最多擦除1M */
 #define TEST_FLASH_EARSE_MAX	(1 << 20)
@@ -1156,3 +1157,12 @@ void test_flash(void)
 }
 
 #endif /* #if (defined TEST_OBJ_NOR_FLASH) || (defined TEST_OBJ_NAND_FLASH) */
+
+#ifdef TEST_OBJ_LCD
+
+void test_lcd(void)
+{
+
+}
+
+#endif	/* TEST_OBJ_LCD */

@@ -17,6 +17,7 @@ typedef enum{
 	TEST_INT_TIMER_INTERRUPT,			/* 内部中断测试，以定时器中断为例*/
 	TEST_NOR_FLASH,						/* NOR FLASH测试 */
 	TEST_NAND_FLASH,					/* NAND FLASH测试 */
+	TEST_LCD,							/* LCD显示屏测试 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 
