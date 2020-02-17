@@ -60,3 +60,9 @@ void exception_printSwiValue(uint32 * swi)
 	print_screen("\r\nswi(svc) instruction addr:%x, value is [%x-%x]\r\n", swi, *swi, val);
 }
 
+/* 打印未定义指令异常地址和指令 */
+void exception_printUndefinedException(uint32 * addr, uint32 * addr2)
+{
+	print_screen("\r\nUndefined instruction addr:%x, instruction is [%x]", addr, *addr);
+	print_screen("\r\n blx R3,Rx[%x], RX instruction[%x]\r\n", addr2, *addr2);
+}

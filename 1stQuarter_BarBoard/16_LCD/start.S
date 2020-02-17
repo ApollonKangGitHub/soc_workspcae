@@ -222,11 +222,18 @@ __und_inSTRuction:
 	 */
 	STMDB SP!, {R0-R12, LR}
 
+	/* R4寄存器在调用函数时会保存现场 */
+	MOV R4, LR
+	
 	/* 处理异常 */
 	MRS R0, CPSR
 	MRS R1, SPSR
 	LDR R2, =und_exception_string
 	BL exception_printException
+	
+	/* 获取LR保存的返回地址的上一条指令 */
+	SUB R0, R4, #4
+	BL exception_printUndefinedException
 
 	/* 恢复现场，LDMIA指令先取后加，LR_und 的赋给 PC */
 	LDMIA SP!, {R0-R12, PC}^	/* ^会把SPSR恢复到CPSR里 */

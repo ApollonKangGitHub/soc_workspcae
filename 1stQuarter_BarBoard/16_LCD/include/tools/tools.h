@@ -50,6 +50,8 @@ typedef unsigned char uint8;
 #define _TOOL_MB_BASE_		(1 << 20)
 #define _TOOL_GB_BASE_		(1 << 30)
 
+#define TOOL_TEST_PRINT()	print_screen("\r\n--------%s - %s - %d", __FILE__, __FUNCTION__, __LINE__)
+
 typedef enum{
 	GET_STR_WORD = 0,
 	GET_STR_LINE = 1,

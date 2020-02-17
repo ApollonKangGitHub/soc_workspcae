@@ -8,6 +8,7 @@
 #include <timer.h>
 #include <nor_flash.h>
 #include <nand_flash.h>
+#include <lcd_common.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1162,7 +1163,99 @@ void test_flash(void)
 
 void test_lcd(void)
 {
+	lcd_common_para_t lcdPara;
+	uint32 fb_base = 0;
+	uint32 x_res = 0;
+	uint32 y_res = 0;
+	bpp_type_t bppType = bpp_type_max;
 
+	int x, y;
+	uint16 * pBpp16 = 0x0;
+	uint32 * pBpp32 = 0x0;
+	
+	/* 初始化LCD */
+	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
+
+	/* 使能LCD */
+	(void)lcd_common_enable(TRUE);
+
+	/* 获取lcd参数：fb_base、xres、yres、bpp等 */
+	(void)lcd_common_para_get(&lcdPara);
+	fb_base = lcdPara._fb_base;
+	x_res = lcdPara._x_res;
+	y_res = lcdPara._y_res;
+	bppType = lcdPara._bpp;
+
+	/* 往framebuffer里面写数据 */
+	if (bppType == bpp_type_16bits)
+	{
+		print_screen("\r\n bpp is 16bits test full screen red/green/bule!");
+	
+		/* 让LCD输出整屏红色，565:0xf800 */
+		pBpp16 = (uint16 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp16++ = 0xf800;
+			}
+		}
+
+		/* 让LCD输出整屏绿色，565:0x07E0 */
+		pBpp16 = (uint16 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp16++ = 0x07E0;
+			}
+		}
+
+		/* 让LCD输出整屏蓝色，565:0x001F */
+		pBpp16 = (uint16 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp16++ = 0x001F;
+			}
+		}
+	}
+	else if ((bppType == bpp_type_24bits) || (bppType == bpp_type_32bits))
+	{
+		print_screen("\r\n bpp is 24/32bits test full screen red/green/bule!");
+	
+		/* 让LCD输出整屏红色，RGB888:0xFF0000 */
+		pBpp32 = (uint32 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp32++ = 0xFF0000;
+			}
+		}
+
+		/* 让LCD输出整屏绿色，RGB888:0x00FF00 */
+		pBpp32 = (uint32 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp32++ = 0x00FF00;
+			}
+		}
+
+		/* 让LCD输出整屏蓝色，RGB888:0x0000FF */
+		pBpp32 = (uint32 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp32++ = 0x0000FF;
+			}
+		}
+	}
+	while(TRUE);
 }
 
 #endif	/* TEST_OBJ_LCD */

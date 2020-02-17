@@ -1,7 +1,7 @@
-#include <lcd_controller_common.h>
+#include <lcd_controller_type.h>
 #include <lcd_controller_s3c2440.h>
 #include <soc_s3c2440_public.h>
-
+#include <tools.h>
 #define HCLK (100)	/* 100MHZ */
 
 static void lcd_jz2440_pin_init(void)
@@ -12,11 +12,10 @@ static void lcd_jz2440_pin_init(void)
 
 	/* 初始化引脚:LCD专用引脚 */
 	GPCCONr = GPCCON_VEDIO_DATA_ENABLE;
-	GPDCONr = GPCCON_VEDIO_DATA_ENABLE;
+	GPDCONr = GPDCON_VEDIO_DATA_ENABLE;
 
 	/* Power Enable */
 	GPGCONr |= (GPGCON_LCD_PWRDN << GPGCON_GPG4_CONF_START);
-	
 }
 
 /* lcd控制器的初始化 */
@@ -42,9 +41,10 @@ void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para)
 	uint32 pixel_plane = 0;
 	uint32 fb_base = 0;
 	uint32 fb_end = 0;
+	uint32 bpp_byte = 0;
 
 	lcd_jz2440_pin_init();
-	
+
 	/* 
 	 * 1、设置VCLK range(5~12)
  	 * VCLK = HCLK / [(CLKVAL+1) x 2] ( CLKVAL ≥ 0 )
@@ -53,12 +53,29 @@ void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para)
  	 * 2、设置模式为TFT
  	 * 3、设置BPP
  	 */
- 	clkval  = (uint32)((double)HCLK / p_lcd_para->vclk / 2 - 1 + 0.5);
+ 	clkval  = (uint32)((double)HCLK / p_lcd_para->time_seq.vclk / 2 - 1 + 0.5);
 	pnrmode = LCDCON1_PNR_MODE_TFT_LCD_PANEL;
-	bppmod  = (p_lcd_para->pixel._bpp == bpp_type_8bits) ? _LCDCON1_TFT_BPP_8_ \
-			: (p_lcd_para->pixel._bpp == bpp_type_16bits) ? _LCDCON1_TFT_BPP_16_ \
-			: (p_lcd_para->pixel._bpp == bpp_type_24bits) ? _LCDCON1_TFT_BPP_24_ \
-			: _LCDCON1_TFT_BPP_16_;
+		
+	if ((p_lcd_para->pixel._bpp == 24) || (p_lcd_para->pixel._bpp == 32)) {
+		pixel_plane = (LCDCON5_SWAP_DISABLE << LCDCON5_BSWP_START) \
+					| (LCDCON5_SWAP_DISABLE << LCDCON5_HWSWP_START) \
+					| (LCDCON5_SWAP_DISABLE << LCDCON5_BPP24BL_START);
+		bppmod = _LCDCON1_TFT_BPP_24_;
+		bpp_byte = 4;
+	}
+	else if (p_lcd_para->pixel._bpp == 16) {
+		pixel_plane = (LCDCON5_SWAP_DISABLE << LCDCON5_BSWP_START) \
+					| (LCDCON5_SWAP_ENABLE << LCDCON5_HWSWP_START);
+		bppmod = _LCDCON1_TFT_BPP_16_;
+		bpp_byte = 2;
+	}
+	else if (p_lcd_para->pixel._bpp == 8) {
+		pixel_plane = (LCDCON5_SWAP_ENABLE << LCDCON5_BSWP_START) \
+					| (LCDCON5_SWAP_DISABLE << LCDCON5_HWSWP_START);
+		bppmod = _LCDCON1_TFT_BPP_8_;
+		bpp_byte = 1;
+	}
+
 	LCDCON1r = (clkval << LCDCON1_CLKVAL_START) \
 			 | (pnrmode << LCDCON1_PNR_MODE_START) \
 		 	 | (bppmod << LCDCON1_BPP_MOD_START);
@@ -75,13 +92,13 @@ void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para)
 
 	/* 5、水平方向时序配置 */
 	hbpd = p_lcd_para->time_seq._thb - 1;
-	hozval = p_lcd_para->pixel._y_res - 1;
+	hozval = p_lcd_para->pixel._x_res - 1;
 	hfpd = p_lcd_para->time_seq._thf - 1;
 	hspw = p_lcd_para->time_seq._thp - 1;
 	LCDCON3r = (hbpd << LCDCON3_HBPD_START) \
 			 | (hozval << LCDCON3_HOZVAL_START) \
 			 | (hfpd << LCDCON3_HFPD_START); 
-	LCDCON4r = (vspw << LCDCON4_HSPW_START);
+	LCDCON4r = (hspw << LCDCON4_HSPW_START);
 
 	/* 6、引脚极性 / RGB BBP 像素格式等 */
 	vclk_polarity = (POLARITY_TYPE_NORMAL == p_lcd_para->pins_pol._vclk) ? LCDCON5_NORMAL: LCDCON5_INVERTED;
@@ -90,28 +107,15 @@ void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para)
 	vsync_polarity = (POLARITY_TYPE_NORMAL == p_lcd_para->pins_pol._vsync) ? LCDCON5_NORMAL: LCDCON5_INVERTED;
 	dataEn_polarity = (POLARITY_TYPE_NORMAL == p_lcd_para->pins_pol._dataEn) ? LCDCON5_NORMAL: LCDCON5_INVERTED;
 	pwrEn_polarity = (POLARITY_TYPE_NORMAL == p_lcd_para->pins_pol._pwrEn) ? LCDCON5_NORMAL: LCDCON5_INVERTED;
-	
-	if (p_lcd_para->pixel._bpp == bpp_type_24bits) {
-		pixel_plane = (LCDCON5_SWAP_DISABLE << LCDCON5_BSWP_START) \
-					| (LCDCON5_SWAP_DISABLE << LCDCON5_HWSWP_START) \
-					| (LCDCON5_SWAP_DISABLE << LCDCON5_BPP24BL_START);
-	}
-	else if (p_lcd_para->pixel._bpp == bpp_type_16bits) {
-		pixel_plane = (LCDCON5_SWAP_DISABLE << LCDCON5_BSWP_START) \
-					| (LCDCON5_SWAP_ENABLE << LCDCON5_HWSWP_START);
-	}
-	else if (p_lcd_para->pixel._bpp == bpp_type_8bits) {
-		pixel_plane = (LCDCON5_SWAP_ENABLE << LCDCON5_BSWP_START) \
-					| (LCDCON5_SWAP_DISABLE << LCDCON5_HWSWP_START);
-	}
+
 					
 	LCDCON5r = (vclk_polarity << LCDCON5_INVVCLK_START) \
 			 | (rgb_polarity << LCDCON5_INVVD_START) \
 			 | (hsync_polarity << LCDCON5_INVVLINE_START) \
 			 | (vsync_polarity << LCDCON5_INVVFRAME_START) \
-			 | (dataEn_polarity << LCDCON5_INVVD_START) \
-			 | (pwrEn_polarity << LCDCON5_PWREN_START) \
-			 | (LCDCON5_FORMAT_16_BBP_565 << LCDCON5_FRM565_START)
+			 | (dataEn_polarity << LCDCON5_NVVDEN_START) \
+			 | (pwrEn_polarity << LCDCON5_INVPWREN_START) \
+			 | (LCDCON5_FORMAT_16_BBP_565 << LCDCON5_FRM565_START) \
 			 | (pixel_plane);
 
 
@@ -123,7 +127,7 @@ void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para)
 	LCDSADDR1r = fb_base & 0x3FFFFFFF;					/* [29:0] = A[30~1] */
 
 	/* LCDBASEL [20:0]	:A[21:1] for framebuffer end address */
-	fb_end = p_lcd_para->fb_base + (p_lcd_para->pixel._x_res * p_lcd_para->pixel._y_res * p_lcd_para->pixel._bpp / 8);
+	fb_end = p_lcd_para->fb_base + (p_lcd_para->pixel._x_res * p_lcd_para->pixel._y_res * bpp_byte);
 	fb_end >>= 1;
 	fb_end &= 0x1FFFFF;
 	LCDSADDR2r = fb_end;
