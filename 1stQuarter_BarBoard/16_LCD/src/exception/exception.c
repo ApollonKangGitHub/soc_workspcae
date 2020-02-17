@@ -61,9 +61,8 @@ void exception_printSwiValue(uint32 * swi)
 }
 
 /* 打印未定义指令异常地址和指令 */
-void exception_printUndefinedException(uint32 * addr, uint32 * addr2)
+void exception_printUndefinedException(uint32 * addr)
 {
-	uint32 reg = 0;
 	print_screen("\r\nUndefined instruction addr:%x, instruction is [%x]", addr, *addr);
 	if ((*addr >= 0XE12FFF30) && (*addr <= 0XE12FFF3C))
 	{
@@ -82,7 +81,6 @@ void exception_printUndefinedException(uint32 * addr, uint32 * addr2)
 		 * e12fff3b    blx fp
 		 * e12fff3c    blx ip
 		 */
-		reg = (*addr) & 0xF;
-		print_screen("\r\n Undefined instruction blx R%d, R%d addr[%x], R%d instruction[%x]\r\n", reg, reg, addr2, *addr2);
+		print_screen("\r\n Undefined instruction blx R%d", (*addr) & 0xF);
 	}
 }
