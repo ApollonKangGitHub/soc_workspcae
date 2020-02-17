@@ -64,5 +64,8 @@ void exception_printSwiValue(uint32 * swi)
 void exception_printUndefinedException(uint32 * addr, uint32 * addr2)
 {
 	print_screen("\r\nUndefined instruction addr:%x, instruction is [%x]", addr, *addr);
-	print_screen("\r\n blx R3,Rx[%x], RX instruction[%x]\r\n", addr2, *addr2);
+	if (0XE12FFF33 == *addr)
+	{
+		print_screen("\r\n Undefined instruction blx R3, R3[%x], R3 instruction[%x]\r\n", addr2, *addr2);
+	}
 }
