@@ -14,13 +14,13 @@ _start:
 @================================================================================
 	B __reset									/* 0x00000000:reset */
 #if 0
-	LDR PC, =__und_inSTRuction					/* 0x00000004:未定义指令异常 */
-	LDR PC, =__software_interrupt				/* 0x00000008:软中断 */
-	LDR PC, =__abort_prefetch					/* 0x0000000C:指令预取终止 */
-	LDR PC, =__abort_data						/* 0x00000010:数据访问终止 */
-	LDR PC, =__reserved_vector					/* 0x00000014:保留 */
-	LDR PC, =__interrupt_request				/* 0x00000018:IRQ */
-	LDR PC, =__fast_interrupt_request			/* 0x0000001C:FIQ */
+	@LDR PC, =__und_inSTRuction					/* 0x00000004:未定义指令异常 */
+	@LDR PC, =__software_interrupt				/* 0x00000008:软中断 */
+	@LDR PC, =__abort_prefetch					/* 0x0000000C:指令预取终止 */
+	@LDR PC, =__abort_data						/* 0x00000010:数据访问终止 */
+	@LDR PC, =__reserved_vector					/* 0x00000014:保留 */
+	@LDR PC, =__interrupt_request				/* 0x00000018:IRQ */
+	@LDR PC, =__fast_interrupt_request			/* 0x0000001C:FIQ */
 #else
 	LDR PC, __und_inSTRuction_addr				/* 0x00000004:未定义指令异常 */
 	LDR PC, __software_interrupt_addr			/* 0x00000008:软中断 */

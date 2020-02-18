@@ -9,6 +9,8 @@
 #include <nor_flash.h>
 #include <nand_flash.h>
 #include <lcd_common.h>
+#include <frameBuffer.h>
+#include <geometry.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1168,6 +1170,7 @@ void test_lcd(void)
 	uint32 x_res = 0;
 	uint32 y_res = 0;
 	bpp_type_t bppType = bpp_type_max;
+	draw_point_coordinate circle_center;
 
 	int x, y;
 	uint16 * pBpp16 = 0x0;
@@ -1186,7 +1189,9 @@ void test_lcd(void)
 	y_res = lcdPara._y_res;
 	bppType = lcdPara._bpp;
 
-	/* 往framebuffer里面写数据 */
+	print_screen("\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
+
+	/* TEST 1、直接往framebuffer里面写数据 */
 	if (bppType == bpp_type_16bits)
 	{
 		print_screen("\r\n bpp is 16bits test full screen red/green/bule!");
@@ -1255,6 +1260,16 @@ void test_lcd(void)
 			}
 		}
 	}
+
+	/* TEST2、初始化Frame Buffer，通过接口操作FrameBuffer */
+	print_screen("\r\n draw circle and annulus.");
+	frameBuffer_init();
+	circle_center.x = 240;
+	circle_center.y = 136;
+	geometry_draw_circle(circle_center, 80, 0xFFFF);
+	geometry_draw_circle(circle_center, 79, 0xFFFF);
+	geometry_draw_circle(circle_center, 78, 0xFFFF);
+	geometry_draw_annulus(circle_center, 40, 60, 0xFFFF);
 	while(TRUE);
 }
 

@@ -94,6 +94,7 @@ int soc_s3c2440_main(void)
 			test_flash();
 			break;
 		case TEST_LCD:
+			//test_flash();
 			test_lcd();
 			break;
 		default:
