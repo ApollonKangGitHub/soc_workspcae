@@ -4,6 +4,7 @@
 #include <tools.h>
 
 extern int frameBuffer_init(void);
+extern int frameBuffer_clear(void);
 extern int frameBuffer_set_point
 (
 	uint32 x, 

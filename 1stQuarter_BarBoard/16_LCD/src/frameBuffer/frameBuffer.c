@@ -34,21 +34,6 @@ static uint32 frameBuffer_bpp_convert(bpp_type_t bpp)
 	return 32;
 }
 
-
-/* 初始化frameBuffer像素、分辨率参数 */
-int frameBuffer_init(void)
-{
-	lcd_common_para_t lcdPara;
-	
-	/* 获取lcd参数：fb_base、xres、yres、bpp等 */
-	(void)lcd_common_para_get(&lcdPara);
-	gFb_LcdPara.fb_base = lcdPara._fb_base;
-	gFb_LcdPara.x_res = lcdPara._x_res;
-	gFb_LcdPara.y_res = lcdPara._y_res;
-	gFb_LcdPara.bpp = frameBuffer_bpp_convert(lcdPara._bpp);
-
-}
-
 /* RGB888转换为RGB565 */
 static uint16 frameBuffer_32bpp_convert_to_16bpp(uint32 rgb888)
 {
@@ -105,3 +90,38 @@ int frameBuffer_set_point
 	}
 	return OK;	
 }
+
+int frameBuffer_clear(void)
+{
+	uint32 pixelBase;
+	int x, y;
+
+	/* 清屏，全黑 */
+	pixelBase = gFb_LcdPara.fb_base;
+	for (y = 0; y < gFb_LcdPara.y_res; y++)
+	{
+		for (x = 0; x < gFb_LcdPara.x_res; x++)
+		{
+			/* 按最大bpp清除 */
+			pixelBase += 4;	
+			*(uint32*)pixelBase = 0x0;
+		}
+	}
+
+}
+
+/* 初始化frameBuffer像素、分辨率参数 */
+int frameBuffer_init(void)
+{
+	lcd_common_para_t lcdPara;
+
+	/* 获取lcd参数：fb_base、xres、yres、bpp等 */
+	(void)lcd_common_para_get(&lcdPara);
+	gFb_LcdPara.fb_base = lcdPara._fb_base;
+	gFb_LcdPara.x_res = lcdPara._x_res;
+	gFb_LcdPara.y_res = lcdPara._y_res;
+	gFb_LcdPara.bpp = frameBuffer_bpp_convert(lcdPara._bpp);
+	frameBuffer_clear();
+
+}
+

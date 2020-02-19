@@ -16,8 +16,16 @@ extern int geometry_draw_point
 	uint32 color
 );
 
-/* 画圆 */
-extern int geometry_draw_circle
+/* 画圆，内部不填充 */
+extern int geometry_draw_circle_empty
+(
+	draw_point_coordinate center_point,
+	uint32 radius,
+	uint32 color
+);
+
+/* 画圆，内部填充 */
+extern int geometry_draw_circle_full
 (
 	draw_point_coordinate center_point,
 	uint32 radius,
@@ -25,7 +33,7 @@ extern int geometry_draw_circle
 );
 
 /* 画环 */
-extern int geometry_draw_annulus
+extern int geometry_draw_annulus_full
 (
 	draw_point_coordinate center_point,
 	uint32 innerRadius,

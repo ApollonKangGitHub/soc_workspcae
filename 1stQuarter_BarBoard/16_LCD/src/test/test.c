@@ -1190,7 +1190,7 @@ void test_lcd(void)
 	bppType = lcdPara._bpp;
 
 	print_screen("\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
-
+#if 0
 	/* TEST 1、直接往framebuffer里面写数据 */
 	if (bppType == bpp_type_16bits)
 	{
@@ -1223,6 +1223,16 @@ void test_lcd(void)
 			for (y = 0; y < y_res; y++)
 			{
 				*pBpp16++ = 0x001F;
+			}
+		}
+		
+		/* 让LCD输出整屏黑色，565:0x001F */
+		pBpp16 = (uint16 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp16++ = 0x0000;
 			}
 		}
 	}
@@ -1259,17 +1269,90 @@ void test_lcd(void)
 				*pBpp32++ = 0x0000FF;
 			}
 		}
-	}
 
+		/* 让LCD输出整屏黑色，RGB888:0x000000 */
+		pBpp32 = (uint32 *)(fb_base);
+		for (x = 0; x < x_res; x++)
+		{
+			for (y = 0; y < y_res; y++)
+			{
+				*pBpp32++ = 0x000000;
+			}
+		}
+	}
+#endif
 	/* TEST2、初始化Frame Buffer，通过接口操作FrameBuffer */
 	print_screen("\r\n draw circle and annulus.");
 	frameBuffer_init();
+#if 1
+	circle_center.x = 30;
+	circle_center.y = 30;
+	geometry_draw_circle_full(circle_center, 20, 0xFF0000);
+	circle_center.x = 30;
+	circle_center.y = 136;
+	geometry_draw_circle_empty(circle_center, 20, 0x00FF00);
+	circle_center.x = 30;
+	circle_center.y = 242;
+	geometry_draw_circle_full(circle_center, 20, 0x0000FF);
+
+	circle_center.x = 450;
+	circle_center.y = 30;
+	geometry_draw_circle_full(circle_center, 20, 0x0000FF);
+	circle_center.x = 450;
+	circle_center.y = 136;
+	geometry_draw_circle_empty(circle_center, 20, 0x00FF00);
+	circle_center.x = 450;
+	circle_center.y = 242;
+	geometry_draw_circle_full(circle_center, 20, 0xFF0000);
+	
 	circle_center.x = 240;
 	circle_center.y = 136;
-	geometry_draw_circle(circle_center, 80, 0xFFFF);
-	geometry_draw_circle(circle_center, 79, 0xFFFF);
-	geometry_draw_circle(circle_center, 78, 0xFFFF);
-	geometry_draw_annulus(circle_center, 40, 60, 0xFFFF);
+	geometry_draw_annulus_full(circle_center, 70, 100, 0xFFFFFF);
+	tool_dealy(2);
+	geometry_draw_annulus_full(circle_center, 10, 30, 0xFFFFFF);
+#else
+	circle_center.x = 50;
+	circle_center.y = 50;
+	geometry_draw_annulus_full(circle_center, 45, 48, 0xFFFFFF);
+	tool_dealy(2);
+
+	circle_center.x = 150;
+	circle_center.y = 50;
+	geometry_draw_annulus_full(circle_center, 40, 43, 0xFFFFFF);
+	tool_dealy(2);
+
+	circle_center.x = 250;
+	circle_center.y = 50;
+	geometry_draw_annulus_full(circle_center, 35, 38, 0xFFFFFF);
+	tool_dealy(2);
+
+	circle_center.x = 350;
+	circle_center.y = 50;
+	geometry_draw_annulus_full(circle_center, 30, 33, 0xFFFFFF);
+	tool_dealy(2);
+
+
+	circle_center.x = 50;
+	circle_center.y = 150;
+	geometry_draw_annulus_full(circle_center, 45, 48, 0xFFFFFF);
+	tool_dealy(2);
+	
+	circle_center.x = 150;
+	circle_center.y = 150;
+	geometry_draw_annulus_full(circle_center, 40, 43, 0xFFFFFF);
+	tool_dealy(2);
+	
+	circle_center.x = 250;
+	circle_center.y = 150;
+	geometry_draw_annulus_full(circle_center, 35, 38, 0xFFFFFF);
+	tool_dealy(2);
+
+	circle_center.x = 350;
+	circle_center.y = 150;
+	geometry_draw_annulus_full(circle_center, 30, 33, 0xFFFFFF);
+	tool_dealy(2);
+
+#endif
 	while(TRUE);
 }
 
