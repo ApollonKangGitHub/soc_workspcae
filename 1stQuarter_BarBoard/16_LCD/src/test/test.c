@@ -11,6 +11,8 @@
 #include <lcd_common.h>
 #include <frameBuffer.h>
 #include <geometry.h>
+#include <font.h>
+#include <paletee.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1173,8 +1175,10 @@ void test_lcd(void)
 	draw_point_coordinate circle_center;
 	draw_point_coordinate start;
 	draw_point_coordinate end;
+	draw_point_coordinate point;
 	uint32 radius = 30;
-		
+	uint32 paletee = 0;
+	
 	int x, y;
 	uint16 * pBpp16 = 0x0;
 	uint32 * pBpp32 = 0x0;
@@ -1198,93 +1202,61 @@ void test_lcd(void)
 	print_screen("\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
 
 	/* TEST 1、直接往framebuffer里面写数据 */
-	if (bppType == bpp_type_16bits)
+	if (bppType == bpp_type_8bits)
 	{
-		print_screen("\r\n bpp is 16bits test full screen red/green/bule!");
-	
-		/* 让LCD输出整屏红色，565:0xf800 */
-		pBpp16 = (uint16 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
-			{
-				*pBpp16++ = 0xf800;
-			}
-		}
+		print_screen("\r\n bpp is 8bits test!");
 
-		/* 让LCD输出整屏绿色，565:0x07E0 */
-		pBpp16 = (uint16 *)(fb_base);
-		for (x = 0; x < x_res; x++)
+		/* 全屏调色板色彩轮训 */
+		x = 0; y = 0; paletee = paletee_16bpp_256color_type_Black_SYSTEM;
+		while (paletee < PALETEE_16BPP_256COLOR_TYPE_NUM)
 		{
-			for (y = 0; y < y_res; y++)
+			print_screen("\r\n paletee traveral %d.", paletee);
+			for (y = 0; y < (y_res / 2); y++)
 			{
-				*pBpp16++ = 0x07E0;
+				for (x = 0; x < x_res; x++)
+				{
+					paletee_print_color_point(x, y, paletee);
+				}
 			}
-		}
-
-		/* 让LCD输出整屏蓝色，565:0x001F */
-		pBpp16 = (uint16 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
+			paletee += 1;
+			
+			for ( ; y < y_res; y++)
 			{
-				*pBpp16++ = 0x001F;
+				for (x = 0; x < x_res; x++)
+				{
+					paletee_print_color_point(x, y, paletee);
+				}
 			}
+			paletee += 1;
 		}
 		
-		/* 让LCD输出整屏黑色，565:0x001F */
-		pBpp16 = (uint16 *)(fb_base);
-		for (x = 0; x < x_res; x++)
+		frameBuffer_clear();
+		
+		/* 输出调色板的所有值 */
+		x = 0; y = 0; paletee = paletee_16bpp_256color_type_Black_SYSTEM;
+		while (paletee < PALETEE_16BPP_256COLOR_TYPE_NUM)
 		{
-			for (y = 0; y < y_res; y++)
+			if (x > (x_res - PALETEE_COLOR_WIDTH))
 			{
-				*pBpp16++ = 0x0000;
+				x = 0;
+				y += PALETEE_COLOR_WIDTH;
 			}
+			paletee_print_color_select(x, y, paletee);
+			paletee++;
+			x += PALETEE_COLOR_WIDTH;
 		}
+
+		tool_dealy(2);
+		frameBuffer_clear();
 	}
-	else if ((bppType == bpp_type_24bits) || (bppType == bpp_type_32bits))
+ 	else if ((bppType == bpp_type_16bits) 
+		|| (bppType == bpp_type_24bits) 
+		|| (bppType == bpp_type_32bits))
 	{
-		print_screen("\r\n bpp is 24/32bits test full screen red/green/bule!");
-	
-		/* 让LCD输出整屏红色，RGB888:0xFF0000 */
-		pBpp32 = (uint32 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
-			{
-				*pBpp32++ = 0xFF0000;
-			}
-		}
-
-		/* 让LCD输出整屏绿色，RGB888:0x00FF00 */
-		pBpp32 = (uint32 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
-			{
-				*pBpp32++ = 0x00FF00;
-			}
-		}
-
-		/* 让LCD输出整屏蓝色，RGB888:0x0000FF */
-		pBpp32 = (uint32 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
-			{
-				*pBpp32++ = 0x0000FF;
-			}
-		}
-
-		/* 让LCD输出整屏黑色，RGB888:0x000000 */
-		pBpp32 = (uint32 *)(fb_base);
-		for (x = 0; x < x_res; x++)
-		{
-			for (y = 0; y < y_res; y++)
-			{
-				*pBpp32++ = 0x000000;
-			}
-		}
+		frameBuffer_fullScreen(0xFF0000);	/* 红 */
+		frameBuffer_fullScreen(0x00FF00);	/* 绿 */
+		frameBuffer_fullScreen(0x0000FF);	/* 蓝 */
+		frameBuffer_clear();
 	}
 
 	/* TEST2、初始化Frame Buffer，通过接口操作FrameBuffer */
@@ -1292,28 +1264,28 @@ void test_lcd(void)
 
 	circle_center.x = radius;
 	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, 0xFF0000);
+	geometry_draw_circle_full(circle_center, radius, 0xF);
 	circle_center.x = radius;
-	circle_center.y = 136;
-	geometry_draw_circle_empty(circle_center, radius, 0x00FF00);
+	circle_center.y = y_res / 2;
+	geometry_draw_circle_empty(circle_center, radius, 0xF);
 	circle_center.x = radius;
 	circle_center.y = y_res - radius;
-	geometry_draw_circle_full(circle_center, radius, 0x0000FF);
+	geometry_draw_circle_full(circle_center, radius, 0xF);
 
 	circle_center.x = x_res - radius;
 	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, 0x0000FF);
+	geometry_draw_circle_full(circle_center, radius, 0xF);
 	circle_center.x = x_res - radius;
-	circle_center.y = 136;
-	geometry_draw_circle_empty(circle_center, radius, 0x00FF00);
+	circle_center.y = y_res / 2;
+	geometry_draw_circle_empty(circle_center, radius, 0xF);
 	circle_center.x = x_res - radius;
-	circle_center.y = 242;
-	geometry_draw_circle_full(circle_center, radius, 0xFF0000);
+	circle_center.y = y_res - radius;
+	geometry_draw_circle_full(circle_center, radius, 0xF);
 	
-	circle_center.x = 240;
-	circle_center.y = 136;
-	geometry_draw_annulus_full(circle_center, 70, 100, 0xFFFFFF);
-	geometry_draw_annulus_full(circle_center, 10, radius, 0xFFFFFF);
+	circle_center.x = x_res / 2;
+	circle_center.y = y_res / 2;
+	geometry_draw_annulus_full(circle_center, radius + 10, radius + 50, 0xF);
+	geometry_draw_annulus_full(circle_center, 0, radius, 0xF);
 
 	print_screen("\r\n draw line.");
 
@@ -1321,37 +1293,36 @@ void test_lcd(void)
 	start.y = 0;
 	end.x = x_res - 1;
 	end.y = y_res - 1;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	geometry_draw_line(start, end, 0xF);
 
 	start.x = 0;
 	start.y = y_res - 1;
 	end.x = x_res - 1;
 	end.y = 0;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	geometry_draw_line(start, end, 0xF);
 
 	start.x = x_res / 2 - 1;
 	start.y = 0;
 	end.x = x_res / 2 - 1;
 	end.y = y_res - 1;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	geometry_draw_line(start, end, 0xF);
 	
 	start.x = 0;
 	start.y = y_res / 2 - 1;
 	end.x = x_res - 1;
 	end.y = y_res / 2 - 1;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	geometry_draw_line(start, end, 0xF);
 
-	start.x = radius;
-	start.y = radius;
-	end.x = x_res - radius - 1;
-	end.y = y_res - radius - 1;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	/* 写字符串 */
+	print_screen("\r\n font write test start.");
+	
+	tool_dealy(2);
+	frameBuffer_clear();
+	font_print_string(0, 0, 0xF, \
+		"\r\n     Kangruojin love xxxxxx, Forever, Whenever, Wherever and Whatever." \
+		"\r\n     Today is 2020-02-21 and 22:25.");
 
-	start.x = radius;
-	start.y = y_res - radius - 1;
-	end.x = x_res - radius - 1;
-	end.y = radius;
-	geometry_draw_line(start, end, 0x00FF00FF);
+	print_screen("\r\n font write test end.");
 }
 
 #endif	/* TEST_OBJ_LCD */

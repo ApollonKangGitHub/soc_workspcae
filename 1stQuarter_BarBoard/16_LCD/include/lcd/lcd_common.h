@@ -32,4 +32,5 @@ extern int lcd_common_init
 extern void lcd_common_enable(BOOL enable);
 extern void lcd_common_para_get(lcd_common_para_t * pPara);
 
+
 #endif	/* _LCD_COMMON_H_ */

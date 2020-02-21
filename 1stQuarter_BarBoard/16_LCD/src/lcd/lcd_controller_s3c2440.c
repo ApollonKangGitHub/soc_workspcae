@@ -1,7 +1,11 @@
 #include <lcd_controller_type.h>
 #include <lcd_controller_s3c2440.h>
+#include <paletee.h>
 #include <soc_s3c2440_public.h>
 #include <tools.h>
+
+extern const uint16 gPaletee_16bpp_256Color[PALETEE_16BPP_256COLOR_TYPE_NUM];
+
 #define HCLK (100)	/* 100MHZ */
 
 static void lcd_jz2440_pin_init(void)
@@ -154,11 +158,39 @@ void lcd_controller_enable_s3c2440(BOOL enable)
 	 }
 }
 
+/* 初始化调试板(bpp=8)，设置之前关闭lcd控制器，设置完成后打开 */
+void lcd_controller_init_palette_s3c2440(void)
+{
+	volatile uint32 * paletteBase = (volatile uint32 * )LCD_CONTROLLER_S3C2440_PALETEE_BASE;
+	uint32 i = 0;
+	BOOL enable = FALSE;
+	
+	enable = LCDCON1r & (LCDCON1_ENVID_MASK << LCDCON1_ENVID_START);
+
+	/* 关闭LCD控制器 */
+	if (enable) {
+		LCDCON1r &= ~(LCDCON1_ENVID_ENABLE << LCDCON1_ENVID_START);
+	}
+
+	/* 设置调色板 */
+	for (i = 0; i < PALETEE_16BPP_256COLOR_TYPE_NUM; i++)
+	{
+		/* 低16bit，rgb565 */
+		*paletteBase++ = gPaletee_16bpp_256Color[i];
+	}
+
+	/* 打开LCD控制器 */
+	if (enable) {
+		LCDCON1r |= (LCDCON1_ENVID_ENABLE << LCDCON1_ENVID_START);
+	}
+}
+
 /* 驱动对象操作结构 */
 lcd_controller_drv_t lcd_controller_s3c2440 = {
 	.lcd_controller_drv_name 	= "SOC S3C2440",
 	.lcd_init 					= lcd_controller_init_s3c2440,
-	.lcd_enable 				= lcd_controller_enable_s3c2440
+	.lcd_enable 				= lcd_controller_enable_s3c2440,
+	.lcd_init_palette           = lcd_controller_init_palette_s3c2440
 };
 
 

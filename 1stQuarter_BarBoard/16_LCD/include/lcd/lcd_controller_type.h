@@ -15,6 +15,7 @@ typedef struct {
 	char * lcd_controller_drv_name;						/* 驱动名 */
 	void (*lcd_init)(lcd_parameters_t * p_lcd_para);	/* lcd初始化 */
 	void (*lcd_enable)(BOOL enable);					/* lcd使能/禁用 */
+	void (*lcd_init_palette)(void);						/* 调色板初始化 */
 }lcd_controller_drv_t;
 
 #endif	/* _LCD_CONTROLLER_TYPE_H_ */

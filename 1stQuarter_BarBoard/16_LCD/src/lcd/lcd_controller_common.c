@@ -78,3 +78,22 @@ void lcd_controller_enable(BOOL enable)
 	}
 }
 
+/* 初始化调色板 */
+void lcd_controller_init_palette(void)
+{
+	lcd_controller_type_t __type__ = lcd_controller_max;
+
+	__type__ = lcd_controller_drv_type();
+	
+	if ((__type__ < lcd_controller_max)
+		&& (gLcdControllerDrv[__type__]->lcd_init_palette != NULL))
+	{
+		gLcdControllerDrv[__type__]->lcd_init_palette();
+	}		
+	else
+	{
+		SOC_DEBUG_PRINT(SOC_DBG_ERROR, "\r\n %s:%s-%d is valid", __FILE__, __FUNCTION__, __LINE__);
+	}
+
+}
+

@@ -9,7 +9,7 @@ int geometry_draw_point
 	uint32 color
 )
 {
-	return frameBuffer_set_point(point.x, point.y, color);
+	frameBuffer_set_point(point.x, point.y, color);
 }
 
 #if 1

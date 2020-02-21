@@ -2,6 +2,10 @@
 #include <lcd_controller_type.h>
 #include <lcd_common.h>
 
+#define mcro_armv4t 					(4)
+#define mcro_armv5te					(5)
+#define ARM_COMPILER_VERSION			(mcro_armv4t)
+
 extern lcd_parameters_t lcd_3_5_para;
 extern lcd_parameters_t lcd_4_3_para;
 
@@ -11,6 +15,18 @@ static lcd_parameters_t *gLcdPara[lcd_type_max] = {
 	&lcd_3_5_para,
 	&lcd_4_3_para
 }; 
+
+/* 调色板初始化 */
+static void lcd_common_init_palette(void)
+{
+#if (ARM_COMPILER_VERSION == mcro_armv4t)
+	lcd_controller_init_palette();
+#else
+	/* S3C2440在高版本编译器下，存在blx指令异常问题，暂时先不用函数指针 */
+	extern void lcd_controller_init_palette_s3c2440(void);
+	lcd_controller_init_palette_s3c2440();
+#endif
+}
 
 /* lcd初始化 */
 int lcd_common_init
@@ -29,25 +45,30 @@ int lcd_common_init
 	/* 选择某款LCD参数 */
 	lcdPara = gLcdPara[lcd_type];
 	gLcdType = lcd_type;
-#if 0
+	
+#if (ARM_COMPILER_VERSION == mcro_armv4t)
 	/* 选择某款LCD控制器 */
 	(void)lcd_controller_select(lcd_ctrl_type);
 
 	/* 使用LCD参数初始化LCD控制器 */
 	(void)lcd_controller_init(lcdPara);
 #else
+	/* S3C2440在高版本编译器下，存在blx指令异常问题，暂时先不用函数指针 */
 	extern void lcd_controller_init_s3c2440(lcd_parameters_t * p_lcd_para);
 	lcd_controller_init_s3c2440(lcdPara);
 #endif
-	
+
+	/* 初始化调色板 */
+	lcd_common_init_palette();
+
 }
 
 void lcd_common_enable(BOOL enable)
 {
-	/* 存在blx指令异常问题，暂时先不用函数指针 */
-#if 0
+#if (ARM_COMPILER_VERSION == mcro_armv4t)
 	lcd_controller_enable(enable);
 #else
+	/* S3C2440在高版本编译器下，存在blx指令异常问题，暂时先不用函数指针 */
 	extern void lcd_controller_enable_s3c2440(BOOL enable);
 	lcd_controller_enable_s3c2440(enable);
 #endif

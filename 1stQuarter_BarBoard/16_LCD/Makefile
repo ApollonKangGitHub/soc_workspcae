@@ -38,6 +38,7 @@ INCLUDE += -I ./include/nor_flash/
 INCLUDE += -I ./include/nand_flash/
 INCLUDE += -I ./include/frameBuffer/
 INCLUDE += -I ./include/lcd/
+INCLUDE += -I ./include/paletee/
 INCLUDE += -I ./include/test/
 
 CFLAGS = $(INCLUDE) 
@@ -97,7 +98,9 @@ OBJS += ./src/tools/tools.o
 OBJS += ./src/log/syslog.o
 OBJS += ./src/timer/timer.o
 OBJS += ./src/nor_flash/nor_flash.o
+OBJS += ./src/paletee/paletee.o
 OBJS += ./src/frameBuffer/frameBuffer.o
+OBJS += ./src/frameBuffer/font_8x16.o
 OBJS += ./src/frameBuffer/font.o
 OBJS += ./src/frameBuffer/geometry.o
 OBJS += ./src/lcd/lcd_4_3.o

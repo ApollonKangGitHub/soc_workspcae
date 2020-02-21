@@ -1,15 +1,9 @@
 #include <frameBuffer.h>
 #include <lcd_common.h>
 #include <tools.h>
+#include <paletee.h>
 
-typedef struct {
-	uint32 x_res;
-	uint32 y_res;
-	uint32 bpp;
-	uint32 fb_base;
-}fb_lcd_para;
-
-static fb_lcd_para gFb_LcdPara = {
+fb_lcd_para gFb_LcdPara = {
 	.x_res = 0,
 	.y_res = 0,
 	.bpp = 0,
@@ -53,7 +47,7 @@ static uint16 frameBuffer_32bpp_convert_to_16bpp(uint32 rgb888)
 
 
 /* 设置某一点的像素颜色 */
-int frameBuffer_set_point
+void frameBuffer_set_point
 (
 	uint32 x, 
 	uint32 y, 
@@ -68,7 +62,7 @@ int frameBuffer_set_point
 	if ((x < 0) || (x > gFb_LcdPara.x_res) 
 		|| (y < 0) || (y > gFb_LcdPara.y_res))
 	{
-		return ERROR;
+		return;
 	}
 
 	pixelBase = gFb_LcdPara.fb_base + (((gFb_LcdPara.x_res * y) + x) * gFb_LcdPara.bpp / 8); 
@@ -76,7 +70,7 @@ int frameBuffer_set_point
 	{
 		case 8:
 			pByte = (uint8 *)pixelBase;
-			*pByte = color;
+			*pByte = color % PALETEE_16BPP_256COLOR_TYPE_NUM;
 			break;
 		case 16:
 			pWord = (uint16 *)pixelBase;
@@ -88,27 +82,45 @@ int frameBuffer_set_point
 			*pDoubleWrod = color;
 			break;
 	}
-	return OK;	
 }
 
-int frameBuffer_clear(void)
+/* 全屏指定颜色 */
+void frameBuffer_fullScreen(uint32 color)
 {
 	uint32 pixelBase;
 	int x, y;
 
-	/* 清屏，全黑 */
 	pixelBase = gFb_LcdPara.fb_base;
 	for (y = 0; y < gFb_LcdPara.y_res; y++)
 	{
 		for (x = 0; x < gFb_LcdPara.x_res; x++)
 		{
-			/* 按最大bpp清除 */
-			pixelBase += 4;	
-			*(uint32*)pixelBase = 0x0;
+			frameBuffer_set_point(x, y, color);
+			switch (gFb_LcdPara.bpp)
+			{
+				case 8:
+					pixelBase += 1;
+					break;
+				case 16:
+					pixelBase += 2;
+					break;
+				case 24:
+				case 32:
+				default:
+					pixelBase += 4;
+					break;
+			}
 		}
 	}
-
 }
+
+/* 清屏 */
+void frameBuffer_clear(void)
+{
+	/* 清屏，全黑 */
+	frameBuffer_fullScreen(0x0);
+}
+
 
 /* 初始化frameBuffer像素、分辨率参数 */
 int frameBuffer_init(void)
