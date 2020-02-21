@@ -346,7 +346,7 @@ void test_thumb_instruction(void)
 {
 	print_screen("\r\n THUMB instruction test[%s-%s-%d]!", __FILE__, __FUNCTION__, __LINE__);
 	
-	tool_dealy(2);
+	tool_dealy(1);
 	test_uart();
 }
 #endif	/* TEST_OBJ_THUMB_INSTRUCTION */
@@ -1171,7 +1171,10 @@ void test_lcd(void)
 	uint32 y_res = 0;
 	bpp_type_t bppType = bpp_type_max;
 	draw_point_coordinate circle_center;
-
+	draw_point_coordinate start;
+	draw_point_coordinate end;
+	uint32 radius = 30;
+		
 	int x, y;
 	uint16 * pBpp16 = 0x0;
 	uint32 * pBpp32 = 0x0;
@@ -1182,6 +1185,9 @@ void test_lcd(void)
 	/* 使能LCD */
 	(void)lcd_common_enable(TRUE);
 
+	/* frameBuffer init */
+	(void)frameBuffer_init();
+	
 	/* 获取lcd参数：fb_base、xres、yres、bpp等 */
 	(void)lcd_common_para_get(&lcdPara);
 	fb_base = lcdPara._fb_base;
@@ -1190,7 +1196,7 @@ void test_lcd(void)
 	bppType = lcdPara._bpp;
 
 	print_screen("\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
-#if 0
+
 	/* TEST 1、直接往framebuffer里面写数据 */
 	if (bppType == bpp_type_16bits)
 	{
@@ -1280,80 +1286,72 @@ void test_lcd(void)
 			}
 		}
 	}
-#endif
+
 	/* TEST2、初始化Frame Buffer，通过接口操作FrameBuffer */
 	print_screen("\r\n draw circle and annulus.");
-	frameBuffer_init();
-#if 1
-	circle_center.x = 30;
-	circle_center.y = 30;
-	geometry_draw_circle_full(circle_center, 20, 0xFF0000);
-	circle_center.x = 30;
-	circle_center.y = 136;
-	geometry_draw_circle_empty(circle_center, 20, 0x00FF00);
-	circle_center.x = 30;
-	circle_center.y = 242;
-	geometry_draw_circle_full(circle_center, 20, 0x0000FF);
 
-	circle_center.x = 450;
-	circle_center.y = 30;
-	geometry_draw_circle_full(circle_center, 20, 0x0000FF);
-	circle_center.x = 450;
+	circle_center.x = radius;
+	circle_center.y = radius;
+	geometry_draw_circle_full(circle_center, radius, 0xFF0000);
+	circle_center.x = radius;
 	circle_center.y = 136;
-	geometry_draw_circle_empty(circle_center, 20, 0x00FF00);
-	circle_center.x = 450;
+	geometry_draw_circle_empty(circle_center, radius, 0x00FF00);
+	circle_center.x = radius;
+	circle_center.y = y_res - radius;
+	geometry_draw_circle_full(circle_center, radius, 0x0000FF);
+
+	circle_center.x = x_res - radius;
+	circle_center.y = radius;
+	geometry_draw_circle_full(circle_center, radius, 0x0000FF);
+	circle_center.x = x_res - radius;
+	circle_center.y = 136;
+	geometry_draw_circle_empty(circle_center, radius, 0x00FF00);
+	circle_center.x = x_res - radius;
 	circle_center.y = 242;
-	geometry_draw_circle_full(circle_center, 20, 0xFF0000);
+	geometry_draw_circle_full(circle_center, radius, 0xFF0000);
 	
 	circle_center.x = 240;
 	circle_center.y = 136;
 	geometry_draw_annulus_full(circle_center, 70, 100, 0xFFFFFF);
-	tool_dealy(2);
-	geometry_draw_annulus_full(circle_center, 10, 30, 0xFFFFFF);
-#else
-	circle_center.x = 50;
-	circle_center.y = 50;
-	geometry_draw_annulus_full(circle_center, 45, 48, 0xFFFFFF);
-	tool_dealy(2);
+	geometry_draw_annulus_full(circle_center, 10, radius, 0xFFFFFF);
 
-	circle_center.x = 150;
-	circle_center.y = 50;
-	geometry_draw_annulus_full(circle_center, 40, 43, 0xFFFFFF);
-	tool_dealy(2);
+	print_screen("\r\n draw line.");
 
-	circle_center.x = 250;
-	circle_center.y = 50;
-	geometry_draw_annulus_full(circle_center, 35, 38, 0xFFFFFF);
-	tool_dealy(2);
+	start.x = 0;
+	start.y = 0;
+	end.x = x_res - 1;
+	end.y = y_res - 1;
+	geometry_draw_line(start, end, 0x00FF00FF);
 
-	circle_center.x = 350;
-	circle_center.y = 50;
-	geometry_draw_annulus_full(circle_center, 30, 33, 0xFFFFFF);
-	tool_dealy(2);
+	start.x = 0;
+	start.y = y_res - 1;
+	end.x = x_res - 1;
+	end.y = 0;
+	geometry_draw_line(start, end, 0x00FF00FF);
 
-
-	circle_center.x = 50;
-	circle_center.y = 150;
-	geometry_draw_annulus_full(circle_center, 45, 48, 0xFFFFFF);
-	tool_dealy(2);
+	start.x = x_res / 2 - 1;
+	start.y = 0;
+	end.x = x_res / 2 - 1;
+	end.y = y_res - 1;
+	geometry_draw_line(start, end, 0x00FF00FF);
 	
-	circle_center.x = 150;
-	circle_center.y = 150;
-	geometry_draw_annulus_full(circle_center, 40, 43, 0xFFFFFF);
-	tool_dealy(2);
-	
-	circle_center.x = 250;
-	circle_center.y = 150;
-	geometry_draw_annulus_full(circle_center, 35, 38, 0xFFFFFF);
-	tool_dealy(2);
+	start.x = 0;
+	start.y = y_res / 2 - 1;
+	end.x = x_res - 1;
+	end.y = y_res / 2 - 1;
+	geometry_draw_line(start, end, 0x00FF00FF);
 
-	circle_center.x = 350;
-	circle_center.y = 150;
-	geometry_draw_annulus_full(circle_center, 30, 33, 0xFFFFFF);
-	tool_dealy(2);
+	start.x = radius;
+	start.y = radius;
+	end.x = x_res - radius - 1;
+	end.y = y_res - radius - 1;
+	geometry_draw_line(start, end, 0x00FF00FF);
 
-#endif
-	while(TRUE);
+	start.x = radius;
+	start.y = y_res - radius - 1;
+	end.x = x_res - radius - 1;
+	end.y = radius;
+	geometry_draw_line(start, end, 0x00FF00FF);
 }
 
 #endif	/* TEST_OBJ_LCD */

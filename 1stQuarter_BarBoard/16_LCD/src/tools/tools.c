@@ -27,6 +27,11 @@ void tool_dealy(uint16 sec)
 	}
 }
 
+float tool_abs_f(float value)
+{
+	return ((value >= 0) ? (value) : (-value));
+}
+
 void tool_calc_mem_size
 (
 	uint32 size, 

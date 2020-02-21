@@ -3,10 +3,13 @@ CC += -O0
 
 #即使加了volatile，uint16的读写操作（strh/ldrh）也可能被分成两次读写uint8的指令(ldrb/strb)
 #使用ARM v4版本的指令编译，保证不会发生以上问题，如果发生可能导致数据访问不同步，
-#CC += -march=armv4
+#2020年2月21日20:50:55，用armv5te指令集S3C2440可能产生未定义指令异常，
+#虽然可以用支持的指令实现相关指令，但是比价麻烦，也不熟悉，还是先用v4指令，
+#lib1funcs.s也可以不用（已经用了编译器自带除法指令库）
+CC += -march=armv4t
 #armv4版本还是有问题，lib1funcs.s编译不过
 #lib1funcs.s:221: Error: selected processor does not support `clz r3,r1'
-CC += -march=armv5te
+#CC += -march=armv5te
 
 #指定连接库
 LIBPATH :=
@@ -81,7 +84,7 @@ else
 endif 
 
 START = start.o
-ASMFILE = lib1funcs.o
+#ASMFILE = lib1funcs.o
 
 OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/nand_flash/nand_flash.o

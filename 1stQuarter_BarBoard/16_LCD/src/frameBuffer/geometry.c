@@ -158,6 +158,67 @@ int geometry_draw_circle_full
 
 #endif
 
+/*
+ * 算法来自互联网：https://wenku.baidu.com/view/8adfdb01de80d4d8d15a4f97.html
+ * 一种简易的LCD点阵划线算法（潘欣裕，赵鹤鸣）---苏州电子信息学院
+ */
+static int geometry_draw_line_szdzxxxy
+(
+	draw_point_coordinate start_point,
+	draw_point_coordinate end_point,
+	uint32 color
+)
+{
+	draw_point_coordinate point;
+	float x_len, y_len;
+	float abs_x_len, abs_y_len;
+	float tmp = 0.0;
+	int i,j;
+
+	x_len = (float)end_point.x - start_point.x;
+	y_len = (float)end_point.y - start_point.y;
+	abs_x_len = tool_abs_f(x_len);
+	abs_y_len = tool_abs_f(y_len);
+
+	if (abs_x_len > abs_y_len)
+	{
+		for (i = 0; i < abs_x_len; i++)
+		{
+			tmp = (float)y_len / abs_x_len * i;
+			if (x_len < 0) 
+			{
+				point.x = start_point.x - i;
+				point.y = start_point.y + tmp;
+			}
+			else
+			{
+				point.x = start_point.x + i;
+				point.y = start_point.y + tmp;
+			}
+			geometry_draw_point(point, color);
+		}
+	}
+	else
+	{
+		for (i = 0; i < abs_y_len; i++)
+		{
+			tmp = (float)x_len / abs_y_len * i;
+			if (y_len < 0) 
+			{
+				point.x = start_point.x + tmp;
+				point.y = start_point.y - i;
+			}
+			else
+			{
+				point.x = start_point.x + tmp;
+				point.y = start_point.y + i;
+			}
+			geometry_draw_point(point, color);
+		}
+	}
+	return OK;
+}
+
 /* 画线 */
 int geometry_draw_line
 (
@@ -166,10 +227,6 @@ int geometry_draw_line
 	uint32 color
 )
 {
-	double dx = (double)(start_point.x - end_point.x);
-	double dy = (double)(start_point.y - end_point.y);
-	double slope = dy / dx;	/* 斜率 */
-
-	return OK;
+	return geometry_draw_line_szdzxxxy(start_point, end_point, color);
 }
 

@@ -63,6 +63,7 @@ typedef enum{
 #define tool_puts uart_puts
 
 extern void tool_dealy(uint16 sec);
+extern float tool_abs_f(float value);
 extern BOOL tool_isBigEndOrder(void);
 extern int tool_strlen(char * str);
 extern char * tool_itoa(uint32 value, char * str);
