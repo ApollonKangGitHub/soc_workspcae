@@ -12,6 +12,7 @@
 #include <frameBuffer.h>
 #include <geometry.h>
 #include <font.h>
+#include <font_8x16.h>
 #include <paletee.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
@@ -1164,6 +1165,7 @@ void test_flash(void)
 #endif /* #if (defined TEST_OBJ_NOR_FLASH) || (defined TEST_OBJ_NAND_FLASH) */
 
 #ifdef TEST_OBJ_LCD
+extern const rgb_256_info_t gRgb256Info[PALETEE_TYPE_NUM];
 
 void test_lcd(void)
 {
@@ -1206,35 +1208,47 @@ void test_lcd(void)
 	{
 		print_screen("\r\n bpp is 8bits test!");
 
-		/* 全屏调色板色彩轮训 */
-		x = 0; y = 0; paletee = paletee_16bpp_256color_type_Black_SYSTEM;
-		while (paletee < PALETEE_16BPP_256COLOR_TYPE_NUM)
+		/* 轮训调色板部分颜色 */
+		x = 0; 
+		y = 0; 
+		paletee = paletee_256_type_Black_SYSTEM;
+		while (paletee < paletee_256_type_Max)
 		{
-			print_screen("\r\n paletee traveral %d.", paletee);
-			for (y = 0; y < (y_res / 2); y++)
-			{
+			/* 上半屏提示信息区清除 */
+			for (y = 0; y < FONT_COL_MAX; y++)
 				for (x = 0; x < x_res; x++)
-				{
+					paletee_print_color_point(x, y, paletee_256_type_Black_SYSTEM);
+				
+			print_screen_lcd(0,0,"Top paletee traveral %d, %s.", paletee, gRgb256Info[paletee].colorName);
+
+			/* 上半屏指定颜色 */	
+			for (y = FONT_COL_MAX; y < (y_res / 2); y++)
+				for (x = 0; x < x_res; x++)
 					paletee_print_color_point(x, y, paletee);
-				}
-			}
-			paletee += 1;
-			
+			paletee++;
+
+			/* 下半屏提示信息区清除 */
+			for ( ; y < (y_res / 2) + FONT_COL_MAX; y++)
+				for (x = 0; x < x_res; x++)
+					paletee_print_color_point(x, y, paletee_256_type_Black_SYSTEM);
+
+			print_screen_lcd(0, (y_res / 2), "Bottom paletee traveral %d, %s.", paletee, gRgb256Info[paletee].colorName);	
+
+			/* 下半屏指定颜色 */
 			for ( ; y < y_res; y++)
-			{
 				for (x = 0; x < x_res; x++)
-				{
 					paletee_print_color_point(x, y, paletee);
-				}
-			}
-			paletee += 1;
-		}
 		
+			paletee++;
+		}
+
 		frameBuffer_clear();
 		
 		/* 输出调色板的所有值 */
-		x = 0; y = 0; paletee = paletee_16bpp_256color_type_Black_SYSTEM;
-		while (paletee < PALETEE_16BPP_256COLOR_TYPE_NUM)
+		x = 0;
+		y = 0; 
+		paletee = paletee_256_type_Black_SYSTEM;
+		while (paletee < paletee_256_type_Max)
 		{
 			if (x > (x_res - PALETEE_COLOR_WIDTH))
 			{
@@ -1246,16 +1260,16 @@ void test_lcd(void)
 			x += PALETEE_COLOR_WIDTH;
 		}
 
-		tool_dealy(2);
+		tool_dealy(5);
 		frameBuffer_clear();
 	}
  	else if ((bppType == bpp_type_16bits) 
 		|| (bppType == bpp_type_24bits) 
 		|| (bppType == bpp_type_32bits))
 	{
-		frameBuffer_fullScreen(0xFF0000);	/* 红 */
-		frameBuffer_fullScreen(0x00FF00);	/* 绿 */
-		frameBuffer_fullScreen(0x0000FF);	/* 蓝 */
+		frameBuffer_fullScreen(paletee_256_type_Red_SYSTEM);	/* 红 */
+		frameBuffer_fullScreen(paletee_256_type_Green_SYSTEM);	/* 绿 */
+		frameBuffer_fullScreen(paletee_256_type_Blue_SYSTEM);	/* 蓝 */
 		frameBuffer_clear();
 	}
 
@@ -1264,28 +1278,28 @@ void test_lcd(void)
 
 	circle_center.x = radius;
 	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, 0xF);
+	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
 	circle_center.x = radius;
 	circle_center.y = y_res / 2;
-	geometry_draw_circle_empty(circle_center, radius, 0xF);
+	geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
 	circle_center.x = radius;
 	circle_center.y = y_res - radius;
-	geometry_draw_circle_full(circle_center, radius, 0xF);
+	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
 
 	circle_center.x = x_res - radius;
 	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, 0xF);
+	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
 	circle_center.x = x_res - radius;
 	circle_center.y = y_res / 2;
-	geometry_draw_circle_empty(circle_center, radius, 0xF);
+	geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
 	circle_center.x = x_res - radius;
 	circle_center.y = y_res - radius;
-	geometry_draw_circle_full(circle_center, radius, 0xF);
+	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
 	
 	circle_center.x = x_res / 2;
 	circle_center.y = y_res / 2;
-	geometry_draw_annulus_full(circle_center, radius + 10, radius + 50, 0xF);
-	geometry_draw_annulus_full(circle_center, 0, radius, 0xF);
+	geometry_draw_annulus_full(circle_center, radius + 10, radius + 50, paletee_256_type_White_SYSTEM);
+	geometry_draw_annulus_full(circle_center, 0, radius, paletee_256_type_White_SYSTEM);
 
 	print_screen("\r\n draw line.");
 
@@ -1293,32 +1307,32 @@ void test_lcd(void)
 	start.y = 0;
 	end.x = x_res - 1;
 	end.y = y_res - 1;
-	geometry_draw_line(start, end, 0xF);
+	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 
 	start.x = 0;
 	start.y = y_res - 1;
 	end.x = x_res - 1;
 	end.y = 0;
-	geometry_draw_line(start, end, 0xF);
+	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 
 	start.x = x_res / 2 - 1;
 	start.y = 0;
 	end.x = x_res / 2 - 1;
 	end.y = y_res - 1;
-	geometry_draw_line(start, end, 0xF);
+	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 	
 	start.x = 0;
 	start.y = y_res / 2 - 1;
 	end.x = x_res - 1;
 	end.y = y_res / 2 - 1;
-	geometry_draw_line(start, end, 0xF);
+	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 
 	/* 写字符串 */
 	print_screen("\r\n font write test start.");
 	
 	tool_dealy(2);
 	frameBuffer_clear();
-	font_print_string(0, 0, 0xF, \
+	font_print_string(0, 0, paletee_256_type_Red_SYSTEM, \
 		"\r\n     Kangruojin love xxxxxx, Forever, Whenever, Wherever and Whatever." \
 		"\r\n     Today is 2020-02-21 and 22:25.");
 

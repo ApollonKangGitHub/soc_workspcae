@@ -4,9 +4,9 @@
 #include <soc_s3c2440_public.h>
 #include <tools.h>
 
-extern const uint16 gPaletee_16bpp_256Color[PALETEE_16BPP_256COLOR_TYPE_NUM];
-
 #define HCLK (100)	/* 100MHZ */
+
+extern rgb_256_info_t gRgb256Info[PALETEE_TYPE_NUM];
 
 static void lcd_jz2440_pin_init(void)
 {
@@ -173,10 +173,10 @@ void lcd_controller_init_palette_s3c2440(void)
 	}
 
 	/* 设置调色板 */
-	for (i = 0; i < PALETEE_16BPP_256COLOR_TYPE_NUM; i++)
+	for (i = 0; i < PALETEE_TYPE_NUM; i++)
 	{
-		/* 低16bit，rgb565 */
-		*paletteBase++ = gPaletee_16bpp_256Color[i];
+		/* 32bit中只有低16bit有效，rgb565 */
+		*paletteBase++ = gRgb256Info[i].rgb565;
 	}
 
 	/* 打开LCD控制器 */

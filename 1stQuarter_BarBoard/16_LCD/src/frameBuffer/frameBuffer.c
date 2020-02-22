@@ -10,6 +10,8 @@ fb_lcd_para gFb_LcdPara = {
 	.fb_base = 0
 };
 
+extern const rgb_256_info_t gRgb256Info[PALETEE_TYPE_NUM];
+
 /* 枚举转为bpp实际占用framebuffer的bit值 */
 static uint32 frameBuffer_bpp_convert(bpp_type_t bpp)
 {
@@ -51,7 +53,7 @@ void frameBuffer_set_point
 (
 	uint32 x, 
 	uint32 y, 
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	uint32 pixelBase = 0;
@@ -70,22 +72,22 @@ void frameBuffer_set_point
 	{
 		case 8:
 			pByte = (uint8 *)pixelBase;
-			*pByte = color % PALETEE_16BPP_256COLOR_TYPE_NUM;
+			*pByte = color;
 			break;
 		case 16:
 			pWord = (uint16 *)pixelBase;
-			*pWord = frameBuffer_32bpp_convert_to_16bpp(color);
+			*pWord = gRgb256Info[color].rgb565;
 			break;
 		case 32:
 		default:
 			pDoubleWrod = (uint32 *)pixelBase;
-			*pDoubleWrod = color;
+			*pDoubleWrod = gRgb256Info[color].rgb888;
 			break;
 	}
 }
 
 /* 全屏指定颜色 */
-void frameBuffer_fullScreen(uint32 color)
+void frameBuffer_fullScreen(paletee_256_type_t color)
 {
 	uint32 pixelBase;
 	int x, y;
@@ -118,7 +120,7 @@ void frameBuffer_fullScreen(uint32 color)
 void frameBuffer_clear(void)
 {
 	/* 清屏，全黑 */
-	frameBuffer_fullScreen(0x0);
+	frameBuffer_fullScreen(paletee_256_type_Black_SYSTEM);
 }
 
 

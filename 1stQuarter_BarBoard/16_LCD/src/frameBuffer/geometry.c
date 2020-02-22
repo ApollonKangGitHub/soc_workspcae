@@ -1,12 +1,13 @@
 #include <geometry.h>
 #include <tools.h>
 #include <frameBuffer.h>
+#include <paletee.h>
 
 /* 画点 */
 int geometry_draw_point
 (
 	draw_point_coordinate point,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	frameBuffer_set_point(point.x, point.y, color);
@@ -20,7 +21,7 @@ int geometry_draw_annulus_full
 	draw_point_coordinate center_point,
 	uint32 innerRadius,
 	uint32 outerRadius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	int x_tmp = 0;
@@ -62,7 +63,7 @@ int geometry_draw_circle_empty
 (
 	draw_point_coordinate center_point,
 	uint32 radius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	return geometry_draw_annulus_full(center_point, radius-1, radius, color);
@@ -73,7 +74,7 @@ int geometry_draw_circle_full
 (
 	draw_point_coordinate center_point,
 	uint32 radius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	return geometry_draw_annulus_full(center_point, 0, radius, color);
@@ -88,7 +89,7 @@ int geometry_draw_circle_empty
 (
 	draw_point_coordinate center_point,
 	uint32 radius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
     int xTmp, yTmp, num;
@@ -125,7 +126,7 @@ int geometry_draw_annulus_full
 	draw_point_coordinate center_point,
 	uint32 innerRadius,
 	uint32 outerRadius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	int inner = innerRadius;
@@ -150,7 +151,7 @@ int geometry_draw_circle_full
 (
 	draw_point_coordinate center_point,
 	uint32 radius,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	return geometry_draw_annulus_full(center_point, 0, radius, color);
@@ -166,7 +167,7 @@ static int geometry_draw_line_szdzxxxy
 (
 	draw_point_coordinate start_point,
 	draw_point_coordinate end_point,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	draw_point_coordinate point;
@@ -224,7 +225,7 @@ int geometry_draw_line
 (
 	draw_point_coordinate start_point,
 	draw_point_coordinate end_point,
-	uint32 color
+	paletee_256_type_t color
 )
 {
 	return geometry_draw_line_szdzxxxy(start_point, end_point, color);

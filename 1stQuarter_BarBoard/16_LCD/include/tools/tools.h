@@ -88,5 +88,6 @@ extern void tool_calc_mem_size
 );
 extern void print_hexStr_multiple(uint8 * buf, int len, uint32 startAddr);
 extern int tool_strncmp(const char * s1, const char * s2, int len);
+int print_screen_lcd(int x, int y, const char * fmt, ...);
 
 #endif

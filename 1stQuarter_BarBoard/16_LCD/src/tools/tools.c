@@ -1,5 +1,6 @@
 #include <tools.h>
 #include <uart.h>
+#include <font.h>
 #include <log.h>
 
 
@@ -442,6 +443,92 @@ int print_screen(const char * fmt, ...)
 	va_end(pList);
 	return 0;
 }
+
+int print_screen_lcd(int x, int y, const char * fmt, ...)
+{
+	const char * pFmt = fmt;
+	va_list pList = NULL;
+	int temp = 0;
+	int index = 0;
+	int len = 0;
+	int i = 0;
+	char * pTemp = NULL;
+	char str[_TOOL_GET_STRING_LEN_];	/* 保证buffer长度，且清空   */
+	char strTmp[_TOOL_GET_STRING_LEN_];
+	
+	if(NULL == pFmt){
+		return -1;
+	}
+	va_start(pList, fmt);
+
+	set_buffer(strTmp, 0, sizeof(strTmp));
+	set_buffer(str, 0, sizeof(str));
+	while('\0' != *pFmt){
+		if('%' != *pFmt){
+			strTmp[index++] = *pFmt++;
+			continue;
+		}
+		pFmt++;		/* 跳过%，判断输出格式 */
+		switch(*pFmt){
+			case 'c':
+				strTmp[index++] = va_arg(pList, int);
+				break;
+			case 'u':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				temp = va_arg(pList, int);
+				/* 最大支持到2147483647的输出 */
+				if (temp >> 31) {
+					temp &= 0X7FFFFFFF;
+				}
+				tool_itoa(temp, str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 'd':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				tool_itoa(va_arg(pList, int), str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 'x':
+			case 'X':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				tool_uitoxa(va_arg(pList, int), str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 's':
+				i = 0;
+				pTemp = va_arg(pList, char*);
+				len = tool_strlen(pTemp);
+				while (len--)
+				{
+					strTmp[index++] = pTemp[i++];
+				}
+				break;
+			default:
+				strTmp[index++] = *--pFmt;
+				break;
+		}
+		pFmt++;
+	}
+	va_end(pList);
+	font_print_string(x,y,0xF,strTmp);
+	return 0;
+}
+
 
 int tool_strlen(char * str)
 {	
