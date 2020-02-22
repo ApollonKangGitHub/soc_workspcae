@@ -5,7 +5,11 @@
 #define _PLATEE_TYPE_256_(__type__)			paletee_256_type_##__type__
 #define _PALETEE_TYPE_256_STR_(__type__)	#__type__
 
-/* rgb565由rgb888分别取r[4:0],r[5:0],b[4:0]组合而成 */
+/*
+ * 2020年2月22日19:49:19
+ * rgb565由rgb888分别取r[4:0],r[5:0],b[4:0]组合而成
+ * 调色板数据来自于:https://jonasjacek.github.io/colors/
+ */
 const rgb_256_info_t gRgb256Info[PALETEE_TYPE_NUM] = {
     {0X00000000, 0X0000, _PLATEE_TYPE_256_(Black_SYSTEM      ), _PALETEE_TYPE_256_STR_(Black_SYSTEM      )},
     {0X00800000, 0X8000, _PLATEE_TYPE_256_(Maroon_SYSTEM     ), _PALETEE_TYPE_256_STR_(Maroon_SYSTEM     )},
