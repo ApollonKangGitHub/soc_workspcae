@@ -9,6 +9,7 @@
  * 2020年2月22日19:49:19
  * rgb565由rgb888分别取r[4:0],r[5:0],b[4:0]组合而成
  * 调色板数据来自于:https://jonasjacek.github.io/colors/
+ * RGB888_TRUE_MIN~RGB888_TRUE_MAX 可以用来支持所有真彩色
  */
 const rgb_256_info_t gRgb256Info[PALETEE_TYPE_NUM] = {
     {0X00000000, 0X0000, _PLATEE_TYPE_256_(Black_SYSTEM      ), _PALETEE_TYPE_256_STR_(Black_SYSTEM      )},

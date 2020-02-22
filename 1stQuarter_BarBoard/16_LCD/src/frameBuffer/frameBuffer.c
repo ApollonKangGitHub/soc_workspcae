@@ -48,7 +48,11 @@ static uint16 frameBuffer_32bpp_convert_to_16bpp(uint32 rgb888)
 }
 
 
-/* 设置某一点的像素颜色 */
+/* 
+ * 设置某一点的像素颜色,支持真彩色和伪彩色
+ * color小于paletee_256_type_Max的用伪调色板的彩色（对8bpp）
+ * 使用真彩色的24bpp可以用 RGB888_TRUE_COLOR 位或上真彩色RGB888数据即可
+ */
 void frameBuffer_set_point
 (
 	uint32 x, 
@@ -72,17 +76,21 @@ void frameBuffer_set_point
 	{
 		case 8:
 			pByte = (uint8 *)pixelBase;
-			*pByte = color;
+			*pByte = color % PALETEE_TYPE_NUM;
 			break;
 		case 16:
 			pWord = (uint16 *)pixelBase;
-			*pWord = gRgb256Info[color].rgb565;
+			*pWord = (color & RGB888_TRUE_COLOR) \
+					? (frameBuffer_32bpp_convert_to_16bpp(color & ~RGB888_TRUE_COLOR)) \
+					: (gRgb256Info[color % PALETEE_TYPE_NUM].rgb565);
 			break;
 		case 24:
 		case 32:
 		default:
 			pDoubleWrod = (uint32 *)pixelBase;
-			*pDoubleWrod = gRgb256Info[color].rgb888;
+			*pDoubleWrod = (color & RGB888_TRUE_COLOR) \
+						? (color & ~RGB888_TRUE_COLOR) \
+						: (gRgb256Info[color % PALETEE_TYPE_NUM].rgb888);
 			break;
 	}
 }

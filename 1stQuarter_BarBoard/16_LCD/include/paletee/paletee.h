@@ -4,6 +4,9 @@
 
 #define PALETEE_COLOR_WIDTH				(20)
 #define PALETEE_TYPE_NUM				(256)
+#define RGB888_TRUE_COLOR				(0XFF000000)
+#define RGB888_TRUE_MIN					((RGB888_TRUE_COLOR) | 0x00000000)
+#define RGB888_TRUE_MAX					((RGB888_TRUE_COLOR) | 0x00FFFFFF)
 
 typedef enum {
 	paletee_256_type_Black_SYSTEM,
@@ -262,7 +265,11 @@ typedef enum {
 	paletee_256_type_Grey85,
 	paletee_256_type_Grey89,
 	paletee_256_type_Grey93,
-	paletee_256_type_Max
+	paletee_256_type_Max,
+
+	/* 256调色板以外的真彩色 */
+	paletee_256_typ_ext_true_color = RGB888_TRUE_MIN,
+	paletee_256_typ_ext_true_color_max = RGB888_TRUE_MAX
 }paletee_256_type_t;
 
 typedef struct {

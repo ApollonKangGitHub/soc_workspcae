@@ -1206,7 +1206,8 @@ void test_lcd(void)
 	tool_dealy(2);
 
 	/* 调色板测试（只有8bit用到了调色板） */
-	if (bpp_type_8bits == bppType) {
+	if (bpp_type_8bits == bppType) 
+	{
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n paletee test!");
 		tool_dealy(2);
@@ -1281,13 +1282,21 @@ void test_lcd(void)
 		tool_dealy(2);
 		frameBuffer_clear();
 	}
-
+	else
 	{
-		frameBuffer_fullScreen(paletee_256_type_Red_SYSTEM);	/* 红 */
-		frameBuffer_fullScreen(paletee_256_type_Green_SYSTEM);	/* 绿 */
-		frameBuffer_fullScreen(paletee_256_type_Blue_SYSTEM);	/* 蓝 */
+		/* 真彩色测试 */
+		frameBuffer_clear();
+		print_screen_lcd(0,0,"\r\n rgb888 true color test start.");
+		tool_dealy(2);
+		
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x00FF0000);	/* 红 */
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x0000FF00);	/* 绿 */
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x000000FF);	/* 蓝 */
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x00FFFF00);	/* 黄 */
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x00FF00FF);	/* 紫 */
+		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x0000FFFF);	/* 靛 */
 	}
-
+	
 	/* 写圆、环测试 */
 	{
 		frameBuffer_clear();
