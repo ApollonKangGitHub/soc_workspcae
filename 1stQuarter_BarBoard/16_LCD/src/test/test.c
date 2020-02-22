@@ -1201,12 +1201,15 @@ void test_lcd(void)
 	y_res = lcdPara._y_res;
 	bppType = lcdPara._bpp;
 
-	print_screen("\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
+	frameBuffer_clear();
+	print_screen_lcd(0,0,"\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
+	tool_dealy(2);
 
-	/* TEST 1、直接往framebuffer里面写数据 */
-	if (bppType == bpp_type_8bits)
-	{
-		print_screen("\r\n bpp is 8bits test!");
+	/* 调色板测试（只有8bit用到了调色板） */
+	if (bpp_type_8bits == bppType) {
+		frameBuffer_clear();
+		print_screen_lcd(0,0,"\r\n paletee test!");
+		tool_dealy(2);
 
 		/* 轮训调色板部分颜色 */
 		x = 0; 
@@ -1221,12 +1224,20 @@ void test_lcd(void)
 				
 			print_screen_lcd(0,0,"Top paletee traveral %d, %s.", paletee, gRgb256Info[paletee].colorName);
 
-			/* 上半屏指定颜色 */	
+			/* 上半屏指定颜色（四列不同色） */	
 			for (y = FONT_COL_MAX; y < (y_res / 2); y++)
 				for (x = 0; x < x_res; x++)
-					paletee_print_color_point(x, y, paletee);
-			paletee++;
-
+					if (x < x_res / 4)
+						paletee_print_color_point(x, y, paletee);
+					else if (x < x_res / 2)
+						paletee_print_color_point(x, y, paletee + 1);
+					else if (x < x_res / 4 * 3)
+						paletee_print_color_point(x, y, paletee + 2);
+					else if (x < x_res)
+						paletee_print_color_point(x, y, paletee + 3);
+					
+			paletee += 4;
+					
 			/* 下半屏提示信息区清除 */
 			for ( ; y < (y_res / 2) + FONT_COL_MAX; y++)
 				for (x = 0; x < x_res; x++)
@@ -1234,12 +1245,19 @@ void test_lcd(void)
 
 			print_screen_lcd(0, (y_res / 2), "Bottom paletee traveral %d, %s.", paletee, gRgb256Info[paletee].colorName);	
 
-			/* 下半屏指定颜色 */
+			/* 下半屏指定颜色（四列不同色） */
 			for ( ; y < y_res; y++)
 				for (x = 0; x < x_res; x++)
-					paletee_print_color_point(x, y, paletee);
+					if (x < x_res / 4)
+						paletee_print_color_point(x, y, paletee);
+					else if (x < x_res / 2)
+						paletee_print_color_point(x, y, paletee + 1);
+					else if (x < x_res / 4 * 3)
+						paletee_print_color_point(x, y, paletee + 2);
+					else if (x < x_res)
+						paletee_print_color_point(x, y, paletee + 3);
 		
-			paletee++;
+			paletee += 4;
 		}
 
 		frameBuffer_clear();
@@ -1260,83 +1278,90 @@ void test_lcd(void)
 			x += PALETEE_COLOR_WIDTH;
 		}
 
-		tool_dealy(5);
+		tool_dealy(2);
 		frameBuffer_clear();
 	}
- 	else if ((bppType == bpp_type_16bits) 
-		|| (bppType == bpp_type_24bits) 
-		|| (bppType == bpp_type_32bits))
+
 	{
 		frameBuffer_fullScreen(paletee_256_type_Red_SYSTEM);	/* 红 */
 		frameBuffer_fullScreen(paletee_256_type_Green_SYSTEM);	/* 绿 */
 		frameBuffer_fullScreen(paletee_256_type_Blue_SYSTEM);	/* 蓝 */
-		frameBuffer_clear();
 	}
 
-	/* TEST2、初始化Frame Buffer，通过接口操作FrameBuffer */
-	print_screen("\r\n draw circle and annulus.");
+	/* 写圆、环测试 */
+	{
+		frameBuffer_clear();
+		print_screen_lcd(0,0,"\r\n draw circle and annulus.");
+		tool_dealy(2);
 
-	circle_center.x = radius;
-	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
-	circle_center.x = radius;
-	circle_center.y = y_res / 2;
-	geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
-	circle_center.x = radius;
-	circle_center.y = y_res - radius;
-	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = radius;
+		circle_center.y = radius;
+		geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = radius;
+		circle_center.y = y_res / 2;
+		geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = radius;
+		circle_center.y = y_res - radius;
+		geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
 
-	circle_center.x = x_res - radius;
-	circle_center.y = radius;
-	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
-	circle_center.x = x_res - radius;
-	circle_center.y = y_res / 2;
-	geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
-	circle_center.x = x_res - radius;
-	circle_center.y = y_res - radius;
-	geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = x_res - radius;
+		circle_center.y = radius;
+		geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = x_res - radius;
+		circle_center.y = y_res / 2;
+		geometry_draw_circle_empty(circle_center, radius, paletee_256_type_White_SYSTEM);
+		circle_center.x = x_res - radius;
+		circle_center.y = y_res - radius;
+		geometry_draw_circle_full(circle_center, radius, paletee_256_type_White_SYSTEM);
+		
+		circle_center.x = x_res / 2;
+		circle_center.y = y_res / 2;
+		geometry_draw_annulus_full(circle_center, radius + 10, radius + 50, paletee_256_type_White_SYSTEM);
+		geometry_draw_annulus_full(circle_center, 0, radius, paletee_256_type_White_SYSTEM);
+	}
 	
-	circle_center.x = x_res / 2;
-	circle_center.y = y_res / 2;
-	geometry_draw_annulus_full(circle_center, radius + 10, radius + 50, paletee_256_type_White_SYSTEM);
-	geometry_draw_annulus_full(circle_center, 0, radius, paletee_256_type_White_SYSTEM);
+	/* 画线测试 */
+	{
+		frameBuffer_clear();
+		print_screen_lcd(0,0,"\r\n draw line.");
+		tool_dealy(2);
 
-	print_screen("\r\n draw line.");
+		start.x = 0;
+		start.y = 0;
+		end.x = x_res - 1;
+		end.y = y_res - 1;
+		geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 
-	start.x = 0;
-	start.y = 0;
-	end.x = x_res - 1;
-	end.y = y_res - 1;
-	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
+		start.x = 0;
+		start.y = y_res - 1;
+		end.x = x_res - 1;
+		end.y = 0;
+		geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
 
-	start.x = 0;
-	start.y = y_res - 1;
-	end.x = x_res - 1;
-	end.y = 0;
-	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
+		start.x = x_res / 2 - 1;
+		start.y = 0;
+		end.x = x_res / 2 - 1;
+		end.y = y_res - 1;
+		geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
+		
+		start.x = 0;
+		start.y = y_res / 2 - 1;
+		end.x = x_res - 1;
+		end.y = y_res / 2 - 1;
+		geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
+	}
 
-	start.x = x_res / 2 - 1;
-	start.y = 0;
-	end.x = x_res / 2 - 1;
-	end.y = y_res - 1;
-	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
-	
-	start.x = 0;
-	start.y = y_res / 2 - 1;
-	end.x = x_res - 1;
-	end.y = y_res / 2 - 1;
-	geometry_draw_line(start, end, paletee_256_type_White_SYSTEM);
-
-	/* 写字符串 */
-	print_screen("\r\n font write test start.");
-	
-	tool_dealy(2);
-	frameBuffer_clear();
-	font_print_string(0, 0, paletee_256_type_Red_SYSTEM, \
-		"\r\n     Kangruojin love xxxxxx, Forever, Whenever, Wherever and Whatever." \
-		"\r\n     Today is 2020-02-21 and 22:25.");
-
-	print_screen("\r\n font write test end.");
+	/* 写字符串测试 */
+	{
+		frameBuffer_clear();
+		print_screen_lcd(0,0,"\r\n font write test start.");
+		tool_dealy(2);
+		
+		frameBuffer_clear();
+		font_print_string(0, 0, paletee_256_type_Red_SYSTEM, \
+			"\r\n     Kangruojin love xxxxxx, Forever, Whenever, Wherever and Whatever." \
+			"\r\n     Today is 2020-02-21 and 22:25.");
+	}
 }
 
 #endif	/* TEST_OBJ_LCD */

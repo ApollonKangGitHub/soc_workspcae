@@ -78,6 +78,7 @@ void frameBuffer_set_point
 			pWord = (uint16 *)pixelBase;
 			*pWord = gRgb256Info[color].rgb565;
 			break;
+		case 24:
 		case 32:
 		default:
 			pDoubleWrod = (uint32 *)pixelBase;
