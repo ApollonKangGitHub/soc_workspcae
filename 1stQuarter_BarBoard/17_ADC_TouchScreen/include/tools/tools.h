@@ -65,6 +65,7 @@ typedef enum{
 extern void tool_dealy(uint16 sec);
 extern float tool_abs_f(float value);
 extern BOOL tool_isBigEndOrder(void);
+extern int tool_strnpy(char * dst, char * src, int len);
 extern int tool_strlen(char * str);
 extern char * tool_itoa(uint32 value, char * str);
 extern BOOL tool_atoui(const char * str, uint32 *result);

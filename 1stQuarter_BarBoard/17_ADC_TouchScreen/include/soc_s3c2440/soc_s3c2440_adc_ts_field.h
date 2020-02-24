@@ -82,7 +82,7 @@
 #define ADCTSC_XY_PST_NO_OPER_MODE		(0x0 << ADCTSC_XY_PST_START)
 
 #define ADCDATA_UPDOWN_BIT				(15)
-#define ADCDATA_UPDOWN_UP				(1)
 #define ADCDATA_UPDOWN_DOWN				(0)
+#define ADCDATA_UPDOWN_UP				(1)
 
 #endif	/* _SOC_S3C2440_ADC_TS_FIELD_H_ */

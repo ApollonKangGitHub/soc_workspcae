@@ -125,8 +125,12 @@ char * tool_itoa(uint32 value, char * str)
 int tool_strncmp(const char * s1, const char * s2, int len)
 {
 	int i = 0;
+
+	if (!s2 || !s1) {
+		return ERROR;
+	}
 	
-	while ((i < len) && (s1[i] != '\0') && (s2[i] != '\0')) {
+	while ((i < len) && s1[i] && s2[i]) {
 		if (s1[i] == s2[i]) {
 			i++;
 			continue;
@@ -149,6 +153,23 @@ int tool_strncmp(const char * s1, const char * s2, int len)
 	}
 
 	return TOOL_STR_CMP_EQUAL;
+}
+
+/* 字符串拷贝，成功返回拷贝字符数，失败返回ERROR */
+int tool_strnpy(char * dst, char * src, int len)
+{
+	int i = 0;
+	if (!dst || !src) {
+		return ERROR;
+	}
+
+	while ((i < len) && src[i])
+	{
+		dst[i] = src[i];
+		i++;
+	}
+
+	return i;
 }
 
 /* 十进制的字符串表示形式，转换为十进制数值，只支持无符号uint32 */
@@ -616,7 +637,7 @@ int tool_strlen(char * str)
 	int len = 0;
 	
 	if (NULL == p) {
-		return -1;
+		return ERROR;
 	}
 
 	while(*p != '\0') {

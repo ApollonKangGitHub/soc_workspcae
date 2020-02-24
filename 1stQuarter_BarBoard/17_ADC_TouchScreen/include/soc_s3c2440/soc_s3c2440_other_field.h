@@ -18,4 +18,7 @@
 /* SWI指令前缀 */
 #define SWI_INSTRUCTION_PREFIX_MASK		(0xff000000)
 
+/* 12MHZ */
+#define CRYSTAL_OSCILLATOR_FREQUENCY	(12000000)
+
 #endif

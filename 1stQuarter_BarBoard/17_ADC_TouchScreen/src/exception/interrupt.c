@@ -13,6 +13,8 @@
 #include <soc_s3c2440_public.h>
 
 #define INTERRUPT_TYPE_ENUM_STR(intName)	#intName
+
+static BOOL gInterruptDbg = FALSE;
 static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 	/* 外部中断 */
 	INTERRUPT_TYPE_ENUM_STR(EXT_INT0),
@@ -299,19 +301,23 @@ BOOL interrupt_status_get
 	}
 
 	*real = occurInterrupt;
-	
-	/* 打印中断类型等信息 */
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "interrupt type:%s[%d]", 
-		gInterruptTypeStr[occurInterrupt], occurInterrupt);
 
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTMASKr   :[%X-%x]", ADDR_INTMASKr, INTMASKr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " EINTMASKr  :[%X-%x]", ADDR_EINTMASKr, EINTMASKr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " SRCPNDr    :[%X-%x]", ADDR_SRCPNDr, SRCPNDr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTPNDr    :[%X-%x]", ADDR_INTPNDr, INTPNDr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " EINTPENDr  :[%X-%x]", ADDR_EINTPENDr, EINTPENDr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTOFFSETr :[%X-%x]", ADDR_INTOFFSETr, INTOFFSETr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTSUBMASKr:[%X-%x]", ADDR_INTSUBMASKr, INTSUBMASKr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " SUBSRCPNDr :[%X-%x]", ADDR_SUBSRCPNDr, SUBSRCPNDr);
+	if (gInterruptDbg)
+	{
+		/* 打印中断类型等信息 */
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "interrupt type:%s[%d]", 
+			gInterruptTypeStr[occurInterrupt], occurInterrupt);
+
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTMASKr   :[%X-%x]", ADDR_INTMASKr, INTMASKr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " EINTMASKr  :[%X-%x]", ADDR_EINTMASKr, EINTMASKr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " SRCPNDr    :[%X-%x]", ADDR_SRCPNDr, SRCPNDr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTPNDr    :[%X-%x]", ADDR_INTPNDr, INTPNDr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " EINTPENDr  :[%X-%x]", ADDR_EINTPENDr, EINTPENDr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTOFFSETr :[%X-%x]", ADDR_INTOFFSETr, INTOFFSETr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " INTSUBMASKr:[%X-%x]", ADDR_INTSUBMASKr, INTSUBMASKr);
+		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " SUBSRCPNDr :[%X-%x]", ADDR_SUBSRCPNDr, SUBSRCPNDr);
+	}
+
 
 	/* 产生的中断和查询的中断一致，则返回TRUE */	
 	return ((type == occurInterrupt) ? TRUE : FALSE);

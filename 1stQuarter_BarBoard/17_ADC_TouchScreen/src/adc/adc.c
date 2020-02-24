@@ -76,10 +76,37 @@ void adc_input_select(adc_mux_type_t type)
 	}
 }
 
-int adc_read_ain0(void)
+int adc_start(void)
 {
 	/* 启动ADC */
 	ADCCONr |= (1 << 0);
+}
+
+void adc_delay(uint32 millisecond)
+{
+	/*
+	 * 延时时间 = ADCDLY * 晶振周期 
+     * millisecond = ADCDLY * (1s / CRYSTAL_OSCILLATOR_FREQUENCY)
+     * ADCDLY = (CRYSTAL_OSCILLATOR_FREQUENCY * millisecond) / 1s 
+     *        = (CRYSTAL_OSCILLATOR_FREQUENCY * millisecond) / 1000ms
+     */
+	ADCDLYr = (CRYSTAL_OSCILLATOR_FREQUENCY * millisecond / 1000);
+}
+
+/* 硬件接反了，所以x用data1，y用data2 */
+uint32 adc_read_x(void)
+{
+	return (ADCDAT1r & ADC_VAL_MASK);
+}
+
+uint32 adc_read_y(void)
+{
+	return (ADCDAT0r & ADC_VAL_MASK);
+}
+
+int adc_read_ain0(void)
+{
+	adc_start();
 
 	/* 判断转换状态 */
 	while (!(ADCCONr & (1 << 15)));

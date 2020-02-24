@@ -391,7 +391,15 @@ void * test_interrupt_handle_key_s5(void * pArgv)
 void * test_interrupt_handle_timer0(void * pArgv)
 {
 	static volatile int times = 0;
-	print_screen("\r\n ----  timer0 counter:%d!  ----", times++);
+	
+	times++;
+
+	/* 定时器中断频率为10ms，此处1s打印一次 */
+	if (0 == (times % TIMER0_FREQUENCY))
+	{
+		print_screen("\r\n ----  timer0 %d second!  ----", times / TIMER0_FREQUENCY);
+	}
+	
 	return;
 }
 
@@ -451,7 +459,7 @@ void test_interrupt_int_timer_init(void)
 	timer_0_init();
 
 	/* 注册回调函数，使能中断控制器 */
-	interrupt_register(interrupt_type_INT_TIMER0, test_interrupt_handle_timer0);
+	timer_register("test internal interrupt timer 0", test_interrupt_handle_timer0);
 }
 
 #endif	/* TEST_OBJ_INTERRUPT */
@@ -1432,6 +1440,7 @@ void test_adc_touch_screen(void)
 	uint32 val = 0;
 
 	print_screen("\r\n adc test touch screen!!! \n\r");
+	timer_0_init();
 	touchScreen_init();
 	
 	while (TRUE)
