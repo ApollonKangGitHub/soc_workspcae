@@ -58,7 +58,7 @@ typedef enum interrupt_type_e{
 	interrupt_type_INT_SPI1,
 	interrupt_type_INT_RTC,
 	interrupt_type_INT_ADC,
-
+	interrupt_type_INT_TSC,
 	/* last please */
 	interrupt_type_MAX
 }interrupt_type_t;

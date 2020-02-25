@@ -26,7 +26,12 @@ static void touchScreen_wait_pen_down(void)
 				| ADCTSC_XY_PST_WAIT_INT_MODE);
 }
 
-/* 等待松开触摸屏触发中断 */
+/*
+ * 等待松开触摸屏触发中断
+ * 注意：等待AD中断处理完成后再修改为wait pen up
+ * 因为TS中断和TIMER中断里，down处理只是启动了AD转换，并没完全处理王DOWN的流程
+ * 如果此时就wait pen up会修改ADCTSC的为非AUTO状态，那么AD转换的值也不会准确
+ */
 static void touchScreen_wait_pen_up(void)
 {	
 	ADCTSCr = (ADCTSC_WAIT_PEN_UP \
@@ -64,25 +69,12 @@ static BOOL touchScreen_isUp(void)
 #endif
 }
 
-/* 判断是否是AD转换完成中断 */
-static BOOL touchScreen_isAdcInterrupt(void)
-{
-	return SOC_S3C2440_REG_BIT_GET(SUBSRCPNDr, SUBSRCPND_INT_ADC_ADC_BIT);
-}
-
-/* 判断是否是触摸屏中断 */
-static BOOL touchScreen_isTsInterrupt(void)
-{
-	return SOC_S3C2440_REG_BIT_GET(SUBSRCPNDr, SUBSRCPND_INT_ADC_TS_BIT);
-}
-
 /* 触摸屏中断处理函数 */
-static void touchScreen_ts_interrupt_handle(void)
+static void * touchScreen_ts_interrupt_handle(void * pArgv)
 {
 	/* 触摸屏被按下 */
 	if (touchScreen_isDown())
 	{
-		print_screen("\r\n Stylus down interrupt occurred.");
 		touchScreen_auto_measure_convert();
 
 		/* 启动ADC开始AD转换,转换结束会产生ADC中断 */
@@ -92,13 +84,12 @@ static void touchScreen_ts_interrupt_handle(void)
 	/* 触摸屏松开 */
 	else if (touchScreen_isUp())
 	{	
-		print_screen("\r\n Stylus up interrupt occurred.");
 		touchScreen_wait_pen_down();
 	}	
 }
 
 /* AD转换完成产生ADC中断 */
-void touchScreen_adc_interrupt_handle(void)
+static void * touchScreen_adc_interrupt_handle(void * pArgv)
 {
 	uint32 x = 0;
 	uint32 y = 0;
@@ -112,65 +103,25 @@ void touchScreen_adc_interrupt_handle(void)
 
 		/* 启动定时器中断 */
 		touchScreen_timer_enable(TRUE);
+			
+		/* 处理完成等待触摸屏松开 */
+		touchScreen_wait_pen_up();
 	}
 	
 	/* 触摸屏松开则不再需要定时获取触点坐标，关闭定时器，进入等待触摸屏按下状态 */
 	if (touchScreen_isUp())
 	{
-		print_screen("\r\n Stylus up interrupt occurred.");
 		touchScreen_timer_enable(FALSE);
 		touchScreen_wait_pen_down();
 	}	
-	
-	/* 处理完成等待触摸屏松开 */
-	touchScreen_wait_pen_up();
-}
-
-/* ADC中断处理函数 */
-static void * touchScreen_adc_ts_interrupt_handle(void * pArgv)
-{
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "--------------------------------------------------------");
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " adc or ts interrupt ocurred!");
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCUPDNr   :[%X-%x]", ADDR_ADCUPDNr, ADCUPDNr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCCONr    :[%X-%x]", ADDR_ADCCONr, ADCCONr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCDLYr    :[%X-%x]", ADDR_ADCDLYr, ADCDLYr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCTSCr    :[%X-%x]", ADDR_ADCTSCr, ADCTSCr);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCDAT0r   :[%X-%x]", ADDR_ADCCONr, ADCDAT0r);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, " ADCDAT1r   :[%X-%x]", ADDR_ADCDLYr, ADCDAT1r);
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "--------------------------------------------------------");
-
-	/* 触摸屏中断 */
-	if (touchScreen_isTsInterrupt())
-	{
-		touchScreen_ts_interrupt_handle();
-	}
-	
-	/* ADC转换完成中断 */
-	if (touchScreen_isAdcInterrupt())
-	{
-		touchScreen_adc_interrupt_handle();
-	}
 }
 
 /* TS中断处理函数 */
 static void touchScreen_adc_ts_interrupt_init(void)
 {
-	/* 清除中断 */
- 	SOC_S3C2440_REG_BIT_SET(SUBSRCPNDr, SUBSRCPND_INT_ADC_ADC_BIT, SUBSRCPND_INT_CLEAR);
-	SOC_S3C2440_REG_BIT_SET(SUBSRCPNDr, SUBSRCPND_INT_ADC_TS_BIT, SUBSRCPND_INT_CLEAR);
-
-	/* 注册中断处理函数，中断处理函数有去使能INT_ADC中断(INTMASKr) */
-	(void)interrupt_register(interrupt_type_INT_ADC, touchScreen_adc_ts_interrupt_handle);
-
-	/*
-	 * 使能ADC和TS中断(INTSUBMASKr)
-	 * INT_ADC_S [10]:
-	 *		0 = Service available, 1 = Masked. Init status is 1.
-	 * INT_TC [9]: 
-	 * 		0 = Service available, 1 = Masked. Init status is 1.
-	 */
- 	SOC_S3C2440_REG_BIT_SET(INTSUBMASKr, INTSUBMASK_INT_ADC_TS_BIT, INTSUBMASK_INT_ENABLE);
-	SOC_S3C2440_REG_BIT_SET(INTSUBMASKr, INTSUBMASK_INT_ADC_ADC_BIT, INTSUBMASK_INT_ENABLE);
+	/* 注册TS、ADC中断处理函数 */
+	(void)interrupt_register(interrupt_type_INT_ADC, touchScreen_adc_interrupt_handle);
+	(void)interrupt_register(interrupt_type_INT_TSC, touchScreen_ts_interrupt_handle);
 }
 
 /* 触摸屏ADC寄存器初始化 */
@@ -193,7 +144,6 @@ void * touchScreen_timer_handle(void * pArgv)
 	/* 触摸屏松开则不再需要定时获取触点坐标，关闭定时器，进入等待触摸屏按下状态 */
 	if (touchScreen_isUp())
 	{	
-		print_screen("\r\n Stylus up interrupt occurred.");
 		touchScreen_timer_enable(FALSE);
 		touchScreen_wait_pen_down();
 		return NULL;
@@ -210,7 +160,7 @@ void * touchScreen_timer_handle(void * pArgv)
 		/* 启动ADC开始AD转换,转换结束会产生ADC中断 */
 		adc_start();
 	}
-	
+
 	return NULL;
 }
 

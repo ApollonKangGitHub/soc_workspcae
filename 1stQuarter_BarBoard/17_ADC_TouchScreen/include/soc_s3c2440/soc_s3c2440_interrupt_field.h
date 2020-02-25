@@ -311,16 +311,21 @@
  * 由于触摸屏中断和ADC转换完成中断适用同一个中断，
  * 所以有SUBSRCPND寄存器来区分，产生的具体是什么中断
  */
-#define SUBSRCPND_INT_ADC_ADC_BIT	(10)
-#define SUBSRCPND_INT_ADC_TS_BIT	(9)
-
-#define INTSUBMASK_INT_ADC_ADC_BIT	(10)
-#define INTSUBMASK_INT_ADC_TS_BIT	(9)
-
-#define SUBSRCPND_INT_CLEAR			(1)
-
-#define INTSUBMASK_INT_ENABLE		(0)
-#define INTSUBMASK_INT_DISABLE		(1)
+#define SUBSRCPND_INT_AC97_BIT 		(14) 
+#define SUBSRCPND_INT_WDT_BIT 		(13)  
+#define SUBSRCPND_INT_CAM_P_BIT 	(12)
+#define SUBSRCPND_INT_CAM_C_BIT 	(11)
+#define SUBSRCPND_INT_ADC_S_BIT 	(10)
+#define SUBSRCPND_INT_TC_BIT 		(9)   
+#define SUBSRCPND_INT_ERR2_BIT 		(8)  
+#define SUBSRCPND_INT_TXD2_BIT 		(7)  
+#define SUBSRCPND_INT_RXD2_BIT 		(6)  
+#define SUBSRCPND_INT_ERR1_BIT 		(5] 
+#define SUBSRCPND_INT_TXD1_BIT 		(4) 
+#define SUBSRCPND_INT_RXD1_BIT 		(3) 
+#define SUBSRCPND_INT_ERR0_BIT 		(2) 
+#define SUBSRCPND_INT_TXD0_BIT 		(1) 
+#define SUBSRCPND_INT_RXD0_BIT 		(0) 
 
 #endif /* _SCO_S3C2440_INTERRUPT_FIELD_H_ */
 
