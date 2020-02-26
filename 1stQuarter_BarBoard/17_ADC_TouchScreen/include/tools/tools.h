@@ -14,7 +14,7 @@
 #endif
 
 #ifndef BOOL
-#define BOOL int
+#define BOOL char
 #endif
 
 #define OK		(0)

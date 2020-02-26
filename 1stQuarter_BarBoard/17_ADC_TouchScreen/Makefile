@@ -112,6 +112,7 @@ OBJS += ./src/lcd/lcd_controller_s3c2440.o
 OBJS += ./src/lcd/lcd_controller_common.o
 OBJS += ./src/adc/adc.o
 OBJS += ./src/touchScreen/touchScreen.o
+OBJS += ./src/touchScreen/touchScreenLib.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o
 

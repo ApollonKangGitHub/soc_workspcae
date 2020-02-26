@@ -6,7 +6,20 @@
 #include <touchScreen.h>
 #include <soc_s3c2440_public.h>
 
+/*
+ * 注意点：
+ * 1、启动ADC转换时，不能进入等待中断模式，他会对AD转换产生影响
+ * 2、只有在等待中断模式下，才可以通过ADCDATA0的BIT15进行UP/DOWN的判断，自动测量模式时不可以
+ * 3、校准很重要，决定后面使用校准的值对LCD操作的精准度
+ */
+
+#define TOUCH_SCREEN_CONTACT_AVERAGE_TIMES	(16)
+
 static BOOL gTimerEnable = FALSE;
+static uint32 gTs_x_save = 0;
+static uint32 gTs_y_save = 0;
+static volatile BOOL gTs_data_valid = FALSE;
+static volatile BOOL gPressure = FALSE;
 
 /* 软件控制定时器启动 */
 static touchScreen_timer_enable(BOOL enable)
@@ -14,8 +27,30 @@ static touchScreen_timer_enable(BOOL enable)
 	gTimerEnable = (enable);
 }
 
+/* 保存触点坐标,只保存一次，保存之后无人读取则不再保存 */
+static touchScreen_contact_coordinates_update(uint32 x, uint32 y, BOOL pressure)
+{
+	if (!gTs_data_valid)
+	{
+		gTs_x_save = x;
+		gTs_y_save = y;
+		gPressure = pressure;
+		gTs_data_valid = TRUE;
+	}
+}
+
+/* 获取触点坐标，获取完成后，数据可以被再次ADC中断更新 */
+void touchScreen_get_contact_coordinates(uint32 *x, uint32 *y, BOOL * pressure)
+{
+	while(!gTs_data_valid);
+	*x = gTs_x_save;
+	*y = gTs_y_save;
+	*pressure = gPressure;
+	gTs_data_valid = FALSE;
+}
+
 /* 等待触摸屏按下触发中断 */
-static void touchScreen_wait_pen_down(void)
+void touchScreen_wait_pen_down(void)
 {	
 	ADCTSCr = (ADCTSC_WAIT_PEN_DOWN \
 				| ADCTSC_PULL_UP_ENABLE \
@@ -49,43 +84,48 @@ static void touchScreen_auto_measure_convert(void)
 	ADCTSCr |= (ADCTSC_AUTO_PST_AUTO | ADCTSC_XY_PST_NO_OPER_MODE);
 }
 
+/* 退出自动测量模式 */
+static void touchScreen_auto_measure_quit(void)
+{	
+	ADCTSCr &= ~(ADCTSC_AUTO_PST_AUTO | ADCTSC_XY_PST_NO_OPER_MODE);
+}
+
 /* 是否是触摸屏按下 */
 static BOOL touchScreen_isDown(void)
 {
-#if 1
 	return (ADCDATA_UPDOWN_DOWN == (SOC_S3C2440_REG_BIT_GET(ADCDAT0r, ADCDATA_UPDOWN_BIT)));
-#else
-	return (ADCTSC_WAIT_PEN_DOWN == (SOC_S3C2440_REG_BIT_GET(ADCTSCr, ADCTSC_UD_SEN_START)));
-#endif
 }
 
 /* 是否是触摸屏松开 */
 static BOOL touchScreen_isUp(void)
 {
-#if 1
 	return (ADCDATA_UPDOWN_UP == (SOC_S3C2440_REG_BIT_GET(ADCDAT0r, ADCDATA_UPDOWN_BIT)));
-#else
-	return (ADCTSC_WAIT_PEN_UP == (SOC_S3C2440_REG_BIT_GET(ADCTSCr, ADCTSC_UD_SEN_START)));
-#endif
+}
+
+/* 是否是自动测量模式 */
+static BOOL touchScreen_isAutoMeasureMode(void)
+{
+	return (ADCTSCr & ADCTSC_AUTO_PST_AUTO);
 }
 
 /* 触摸屏中断处理函数 */
 static void * touchScreen_ts_interrupt_handle(void * pArgv)
 {
-	/* 触摸屏被按下 */
-	if (touchScreen_isDown())
-	{
-		touchScreen_auto_measure_convert();
+	/* 保证判断down、up时不处于adc auto measure模式 */
+	(void)touchScreen_auto_measure_quit();
 
-		/* 启动ADC开始AD转换,转换结束会产生ADC中断 */
-		adc_start();
-	}
-	
 	/* 触摸屏松开 */
-	else if (touchScreen_isUp())
+	if (touchScreen_isUp())
 	{	
 		touchScreen_wait_pen_down();
+		(void)touchScreen_contact_coordinates_update(0, 0, FALSE);
 	}	
+	/* 触摸屏被按下,启动ADC的自动转换,转换结束会产生ADC中断 */
+	else if (touchScreen_isDown())
+	{
+		touchScreen_auto_measure_convert();
+		adc_start();
+	}
 }
 
 /* AD转换完成产生ADC中断 */
@@ -93,31 +133,57 @@ static void * touchScreen_adc_interrupt_handle(void * pArgv)
 {
 	uint32 x = 0;
 	uint32 y = 0;
+	static volatile uint32 x_sum = 0;
+	static volatile uint32 y_sum = 0;
+	static volatile uint32 adcTimes = 0;
+	
+	/* 保证判断down、up时不处于adc auto measure模式 */
+	(void)touchScreen_wait_pen_up();
 
 	/* 产生ADC中断时，判断还未松开，则获取触点坐标并打印坐标 */
 	if (touchScreen_isDown())
 	{
-		x = adc_read_x();
-		y = adc_read_y();
-		print_screen("\r\n x=%d[%x], y=%d[%x]", x, x, y, y);
+		x_sum += adc_read_x();
+		y_sum += adc_read_y();
+		adcTimes++;
 
-		/* 启动定时器中断 */
-		touchScreen_timer_enable(TRUE);
+		/* 更新触点坐标平均值 */
+		if (TOUCH_SCREEN_CONTACT_AVERAGE_TIMES == adcTimes)
+		{
+			x = x_sum / TOUCH_SCREEN_CONTACT_AVERAGE_TIMES;
+			y = y_sum / TOUCH_SCREEN_CONTACT_AVERAGE_TIMES;
+			(void)touchScreen_contact_coordinates_update(x, y, TRUE);
+			adcTimes = 0;
+			x_sum = 0;
+			y_sum = 0;
 			
-		/* 处理完成等待触摸屏松开 */
-		touchScreen_wait_pen_up();
+			/* 先设置TS为等待up中断模式 */
+			(void)touchScreen_wait_pen_up();		
+			/* 启动定时器中断 */
+			(void)touchScreen_timer_enable(TRUE);
+		}		
+		else
+		{
+			/* 再次启动ADC */
+			touchScreen_auto_measure_convert();
+			adc_start();
+		}
 	}
 	
 	/* 触摸屏松开则不再需要定时获取触点坐标，关闭定时器，进入等待触摸屏按下状态 */
-	if (touchScreen_isUp())
+	else if (touchScreen_isUp())
 	{
-		touchScreen_timer_enable(FALSE);
-		touchScreen_wait_pen_down();
+		(void)touchScreen_timer_enable(FALSE);
+		(void)touchScreen_wait_pen_down();
+		(void)touchScreen_contact_coordinates_update(0, 0, FALSE);
+		adcTimes = 0;
+		x_sum = 0;
+		y_sum = 0;
 	}	
 }
 
 /* TS中断处理函数 */
-static void touchScreen_adc_ts_interrupt_init(void)
+void touchScreen_adc_ts_interrupt_init(void)
 {
 	/* 注册TS、ADC中断处理函数 */
 	(void)interrupt_register(interrupt_type_INT_ADC, touchScreen_adc_interrupt_handle);
@@ -125,7 +191,7 @@ static void touchScreen_adc_ts_interrupt_init(void)
 }
 
 /* 触摸屏ADC寄存器初始化 */
-static void touchScreen_adc_ts_reg_init(void)
+void touchScreen_adc_ts_reg_init(void)
 {
 	adc_init();
 
@@ -136,7 +202,8 @@ static void touchScreen_adc_ts_reg_init(void)
 /* 定时器处理函数，用于长按和滑动操作 */
 void * touchScreen_timer_handle(void * pArgv)
 {
-	if (!gTimerEnable)
+	/* 定时器不响应或自动测量模式直接返回 */
+	if (!gTimerEnable || (touchScreen_isAutoMeasureMode()))
 	{
 		return NULL;
 	}
@@ -146,6 +213,7 @@ void * touchScreen_timer_handle(void * pArgv)
 	{	
 		touchScreen_timer_enable(FALSE);
 		touchScreen_wait_pen_down();
+		touchScreen_contact_coordinates_update(0,0,FALSE);
 		return NULL;
 	}
 	
@@ -153,42 +221,13 @@ void * touchScreen_timer_handle(void * pArgv)
 	 * 每10ms产生一次定时器中断，如果产生定时器中断时，
 	 * 触摸屏被按下则再次触发一次测量与AD转换
 	 */
-	if (touchScreen_isDown()) 
+	else if (touchScreen_isDown()) 
 	{
 		touchScreen_auto_measure_convert();
-
-		/* 启动ADC开始AD转换,转换结束会产生ADC中断 */
 		adc_start();
 	}
 
 	return NULL;
 }
 
-/* 触摸屏初始化 */
-void touchScreen_init(void)
-{
-	/* 设置触摸屏相关寄存器 */
-	(void)touchScreen_adc_ts_reg_init();
 
-	/* 设置中断 */
-	(void)touchScreen_adc_ts_interrupt_init();
-
-	/* 让触摸屏控制器进入等待中断模式 */
-	(void)touchScreen_wait_pen_down();
-
-	print_screen("\r\n --------------------------------------------------------");
-	print_screen("\r\n touchScreen init succeed!!!");
-	print_screen("\r\n INTSUBMASKr:[%X-%x]", ADDR_INTSUBMASKr, INTSUBMASKr);
-	print_screen("\r\n SUBSRCPNDr :[%X-%x]", ADDR_SUBSRCPNDr, SUBSRCPNDr);
-	print_screen("\r\n ADCUPDNr   :[%X-%x]", ADDR_ADCUPDNr, ADCUPDNr);
-	print_screen("\r\n ADCCONr    :[%X-%x]", ADDR_ADCCONr, ADCCONr);
-	print_screen("\r\n ADCDLYr    :[%X-%x]", ADDR_ADCDLYr, ADCDLYr);
-	print_screen("\r\n ADCTSCr    :[%X-%x]", ADDR_ADCTSCr, ADCTSCr);
-	print_screen("\r\n ADCDAT0r   :[%X-%x]", ADDR_ADCCONr, ADCDAT0r);
-	print_screen("\r\n ADCDAT1r   :[%X-%x]", ADDR_ADCDLYr, ADCDAT1r);
-	print_screen("\r\n --------------------------------------------------------");
-
-		
-	/* 注册定时器回掉函数, 启动定时器 */
-	timer_register("touch screen timer 0", touchScreen_timer_handle);
-}

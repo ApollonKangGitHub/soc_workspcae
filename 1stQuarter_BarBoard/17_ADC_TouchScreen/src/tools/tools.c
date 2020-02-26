@@ -13,7 +13,7 @@
  */
 int raise (int signum)
 {
-	print_screen("raise: Signal # %d caught\n", signum);
+	print_screen("\r\nraise: Signal # %d caught\n", signum);
 	return 0;
 }
 

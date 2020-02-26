@@ -81,6 +81,7 @@
 #define ADCTSC_XY_PST_X_POS_MEA_MODE	(0x1 << ADCTSC_XY_PST_START)
 #define ADCTSC_XY_PST_NO_OPER_MODE		(0x0 << ADCTSC_XY_PST_START)
 
+/* 只有在等待中断模式下，才能使用ADCDATA0的bit15来判断UP还是DOWN */
 #define ADCDATA_UPDOWN_BIT				(15)
 #define ADCDATA_UPDOWN_DOWN				(0)
 #define ADCDATA_UPDOWN_UP				(1)

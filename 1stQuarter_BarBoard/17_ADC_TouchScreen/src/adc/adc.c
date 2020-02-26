@@ -93,15 +93,14 @@ void adc_delay(uint32 millisecond)
 	ADCDLYr = (CRYSTAL_OSCILLATOR_FREQUENCY * millisecond / 1000);
 }
 
-/* 硬件接反了，所以x用data1，y用data2 */
 uint32 adc_read_x(void)
 {
-	return (ADCDAT1r & ADC_VAL_MASK);
+	return (ADCDAT0r & ADC_VAL_MASK);
 }
 
 uint32 adc_read_y(void)
 {
-	return (ADCDAT0r & ADC_VAL_MASK);
+	return (ADCDAT1r & ADC_VAL_MASK);
 }
 
 int adc_read_ain0(void)

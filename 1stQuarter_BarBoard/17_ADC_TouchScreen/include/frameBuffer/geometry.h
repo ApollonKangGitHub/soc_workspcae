@@ -42,7 +42,7 @@ extern int geometry_draw_annulus_full
 	paletee_256_type_t color
 );
 
-/* 划线 */
+/* 画线 */
 extern int geometry_draw_line
 (
 	draw_point_coordinate start_point,
@@ -50,4 +50,11 @@ extern int geometry_draw_line
 	paletee_256_type_t color
 );
 
+/* 画十字 */
+extern void geometry_draw_cross
+(
+	draw_point_coordinate core, 
+	uint32 width,
+	paletee_256_type_t color
+);
 #endif	/* _GEOMETRY_H_ */

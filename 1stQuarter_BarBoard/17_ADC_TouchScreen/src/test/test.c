@@ -15,7 +15,7 @@
 #include <font_8x16.h>
 #include <paletee.h>
 #include <adc.h>
-#include <touchScreen.h>
+#include <touchScreenLib.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1431,17 +1431,41 @@ void test_adc_voltage(void)
 #endif	/* TEST_OBJ_ADC_VOLTAGE */
 
 #ifdef TEST_OBJ_TOUCH_SCREEN
+
 void test_adc_touch_screen(void)
 {
-	uint32 val = 0;
+	draw_point_coordinate point;
+	BOOL pressure = FALSE;
+	int ret = OK;
 
 	print_screen("\r\n adc test touch screen!!! \n\r");
+		
+	/* 定时器、触摸屏初始化 */
 	timer_0_init();
 	touchScreen_init();
-	
-	while (TRUE)
-	{
 
+	/* LCD初始化参数获取 */
+	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
+	(void)lcd_common_enable(TRUE);
+	(void)frameBuffer_init();
+
+	/* 触摸屏校准 */
+	print_screen_lcd(70, 70, "\r\n Touch Screen Calibration!!");
+	touchScreen_calibration();
+
+	/* 清屏 */
+	frameBuffer_clear();
+	print_screen_lcd(70, 70, "\r\n Touch Screen draw line test!!");
+	
+	while(TRUE)
+	{
+		/* 触摸屏移动划线 */
+		ret = touchScreen_get_point(&point.x, &point.y, &pressure);
+		print_screen("\r\n ret=%d, pressure=%d, x=%d, y=%d", ret, pressure, point.x, point.y);
+		if ((OK == ret) && pressure)
+		{
+			geometry_draw_point(point, paletee_256_type_Red_SYSTEM);
+		}
 	}
 }
 

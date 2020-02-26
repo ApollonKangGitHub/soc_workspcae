@@ -231,3 +231,29 @@ int geometry_draw_line
 	return geometry_draw_line_szdzxxxy(start_point, end_point, color);
 }
 
+/* 画水平竖直交叉十字线 */
+void geometry_draw_cross
+(
+	draw_point_coordinate core, 
+	uint32 width,
+	paletee_256_type_t color
+)
+{
+	draw_point_coordinate start;
+	draw_point_coordinate end;
+
+	/* 水平线 */
+	start.x = core.x - width;
+	start.y = core.y;
+	end.x = core.x + width;
+	end.y = core.y;
+	geometry_draw_line(start, end, color);
+
+	/* 竖直线 */
+	start.x = core.x;
+	start.y = core.y - width;
+	end.x = core.x;
+	end.y = core.y + width;
+	geometry_draw_line(start, end, color);
+}
+
