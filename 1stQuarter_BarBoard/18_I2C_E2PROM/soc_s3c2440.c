@@ -45,7 +45,7 @@ int soc_s3c2440_main(void)
 	test_choose = TEST_SWI_EXCEPTION;
 #endif
 
-	test_choose = TEST_I2C_E2PROM;
+	test_choose = TEST_INT_TIMER_INTERRUPT;
 
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
