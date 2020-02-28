@@ -387,8 +387,8 @@
 #define ADDR_IICADDr				(0x54000008)		/* IIC-Bus address register */
 #define IICADDr						__REG_VALUE(ADDR_IICADDr)
 
-#define ADDR_IICCDSr				(0x5400000C)		/* IIC-Bus transmit/receive data shift register */
-#define IICDSr						__REG_VALUE(ADDR_IICCDSr)
+#define ADDR_IICDSr					(0x5400000C)		/* IIC-Bus transmit/receive data shift register */
+#define IICDSr						__REG_VALUE(ADDR_IICDSr)
 
 /* ################################################################################################################################## */
 

@@ -179,9 +179,14 @@ BOOL tool_atoui(const char * str, uint32 * result)
 	int index = 0;
 	const char *s = str;
 	uint32 value = 0;
+	int len = 0;
+	
+	len = tool_strlen(s);
 
 	/* 传入的string值大于最大正数的string则不支持，返回FALSE */
-	if (tool_strncmp(s, uintMax, TOOL_MAX_INT_STR_LEN) > 0) {
+	if ((len  > TOOL_MAX_INT_STR_LEN) || 
+		((len == TOOL_MAX_INT_STR_LEN) && 
+		(tool_strncmp(s, uintMax, TOOL_MAX_INT_STR_LEN) > 0))) {
 		return FALSE;
 	}
 	
@@ -191,7 +196,7 @@ BOOL tool_atoui(const char * str, uint32 * result)
 			|| (index >= TOOL_MAX_INT_STR_LEN)) {
 			return FALSE;
 		}
-
+		
 		/* 即value = value x 10 + low */
 		value = (value << 3) + (value << 1);	
 		value += (s[index] - '0');
@@ -631,9 +636,9 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 }
 
 
-int tool_strlen(char * str)
+int tool_strlen(const char * str)
 {	
-	char *p = str;
+	const char *p = str;
 	int len = 0;
 	
 	if (NULL == p) {

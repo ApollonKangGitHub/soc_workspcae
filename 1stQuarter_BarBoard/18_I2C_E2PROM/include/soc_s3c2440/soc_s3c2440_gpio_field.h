@@ -15,7 +15,7 @@ S3C2440A has 130 multi-functional input/output port pins and there are eight por
 */
 
 /* GPIO common field defines */
-#define GPIOCON_PIN0_CONF_BITSf			(0x3 << 0)
+#define GPIOCON_PIN0_CONF_BITSf 		(0x3 << 0)
 #define GPIOCON_PIN1_CONF_BITSf 		(0x3 << 2)
 #define GPIOCON_PIN2_CONF_BITSf 		(0x3 << 4)
 #define GPIOCON_PIN3_CONF_BITSf 		(0x3 << 6)
@@ -23,7 +23,7 @@ S3C2440A has 130 multi-functional input/output port pins and there are eight por
 #define GPIOCON_PIN5_CONF_BITSf 		(0x3 << 10)
 #define GPIOCON_PIN6_CONF_BITSf 		(0x3 << 12)
 #define GPIOCON_PIN7_CONF_BITSf 		(0x3 << 14)
-#define GPIOCON_PIN8_CONF_BITSf			(0x3 << 16)
+#define GPIOCON_PIN8_CONF_BITSf 		(0x3 << 16)
 #define GPIOCON_PIN9_CONF_BITSf 		(0x3 << 18)
 #define GPIOCON_PIN10_CONF_BITSf 		(0x3 << 20)
 #define GPIOCON_PIN11_CONF_BITSf 		(0x3 << 22)
@@ -252,5 +252,8 @@ S3C2440A has 130 multi-functional input/output port pins and there are eight por
 #define GPHDAT_GPH9_DATA_BITSf		GPIODAT_PIN9_DATA_BITSf	
 #define GPHDAT_GPH10_DATA_BITSf		GPIODAT_PIN10_DATA_BITSf
 
-
+#define GPECON_GPE14_START 			(28)
+#define GPECON_GPE15_START 			(30)
+#define GPECON_GPE14_IICSCL			(GPIOCON_PIN_CONF_VAL_2)
+#define GPECON_GPE15_IICSDA			(GPIOCON_PIN_CONF_VAL_2)
 #endif

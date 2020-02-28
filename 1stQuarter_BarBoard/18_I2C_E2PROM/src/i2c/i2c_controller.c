@@ -50,12 +50,15 @@ int i2c_controller_master_transfer(i2c_msg_t * msgs, int num)
 	if ((__type__ < i2c_controller_type_max)
 		&& gI2cControllerDrv[__type__]->i2c_master_xfer)
 	{
-		gI2cControllerDrv[__type__]->i2c_master_xfer(msgs, num);
+		return gI2cControllerDrv[__type__]->i2c_master_xfer(msgs, num);
 	}
 	else 
 	{
 		print_screen("\r\n Invalid function %s-%d, type:%d", __FUNCTION__, __LINE__, __type__);
+		return ERROR;
 	}
+
+	return OK;
 }
 
 /* I2C 控制器初始化 */
@@ -66,11 +69,33 @@ int i2c_controller_init(void)
 	if ((__type__ < i2c_controller_type_max)
 		&& gI2cControllerDrv[__type__]->i2c_controller_init)
 	{
-		gI2cControllerDrv[__type__]->i2c_controller_init();
+		return gI2cControllerDrv[__type__]->i2c_controller_init();
 	}
 	else 
 	{
 		print_screen("\r\n Invalid function %s-%d, type:%d", __FUNCTION__, __LINE__, __type__);
+		return ERROR;
 	}
+
+	return OK;
+}
+
+/* I2C master设备是否需要发送最后一个ACK */
+int i2c_controller_last_ack_send(BOOL send)
+{
+	i2c_controller_type_t __type__ = i2c_controller_drv_type();
+
+	if ((__type__ < i2c_controller_type_max)
+		&& gI2cControllerDrv[__type__]->i2c_last_ack_send)
+	{
+		(void)gI2cControllerDrv[__type__]->i2c_last_ack_send(send);
+	}
+	else 
+	{
+		print_screen("\r\n Invalid function %s-%d, type:%d", __FUNCTION__, __LINE__, __type__);
+		return ERROR;
+	}
+
+	return OK;
 }
 

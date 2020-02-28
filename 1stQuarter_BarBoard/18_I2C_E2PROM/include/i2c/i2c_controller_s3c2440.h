@@ -31,8 +31,15 @@
  * 	4-bit prescaler value, according to the following 
  * 	formula: Tx clock = IICCLK/(IICCON[3:0]+1).
  */
-
-
+#define IICCON_BUS_RXTX_MODE_REPLY_ACK			(1)
+#define IICCON_BUS_ACK_ENABLE_START			  	(7)
+#define IICCON_BUS_TRANSMIT_CLK_PRESCALER_START	(0)
+#define IICCON_BUS_CLK_SOURCE_FPCLK_512			(1)
+#define IICCON_BUS_CLK_SOURCE_FPCLK_16			(0)
+#define IICCON_BUS_CLK_SOURCE_FPCLK_START		(6)
+#define IICCON_BUS_INTERRUPR_ENABLE				(1)
+#define IICCON_BUS_INTERRUPR_DISABLE			(0)
+#define IICCON_BUS_INTERRUPR_ENABLE_START		(5)
 /*
  * IIC-bus master/slave Tx/Rx mode select bits. 
  * 00: Slave receive mode 
@@ -51,9 +58,9 @@
 #define IICSTAT_BUSY_STATUS_NOBUSY		(0)
 #define IICSTAT_BUSY_STATUS_BUSY		(1)
 
-#define IICSTAT_WR_OP_SINGLE_START_BIT	(5)
-#define IICSTAT_WR_OP_SINGLE_START		(0)
-#define IICSTAT_WR_OP_SINGLE_STOP		(1)
+#define IICSTAT_WRRD_OP_SINGLE_START_BIT	(5)
+#define IICSTAT_WRRD_OP_SINGLE_START		(1)
+#define IICSTAT_WRRD_OP_SINGLE_STOP			(0)
 
 #define IICSTAT_SERIAL_CTRL_START_BIT	(4)
 #define IICSTAT_SERIAL_CTRL_DISABLE		(0)
@@ -73,9 +80,9 @@
 #define IICADDR_RD_WR_FLAG_RD			(1)
 
 #define IICADDR_ADDR_START_BIT			(1)
-#define IICADDR_ADDR_MASK				(0x3F)
+#define IICADDR_ADDR_MASK				(0x7F)
 
 #define IICCON_INTERRUPT_PEND_START_BIT	(4)
-#define IICCON_INTERRUPT_PEND_CLR		(1)
+#define IICCON_INTERRUPT_PEND_CLR		(0)
 
 #endif	/* _I2C_CONTROLLER_S3C2440_H_ */

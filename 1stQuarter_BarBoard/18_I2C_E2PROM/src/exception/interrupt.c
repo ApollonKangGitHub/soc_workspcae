@@ -14,7 +14,7 @@
 
 #define INTERRUPT_TYPE_ENUM_STR(intName)	#intName
 
-static BOOL gInterruptDbg = FALSE;
+static BOOL gInterruptDbg = TRUE;
 static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 	/* 外部中断 */
 	INTERRUPT_TYPE_ENUM_STR(EXT_INT0),
@@ -77,7 +77,7 @@ static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 
 /* 中断测试驱动注册函数数组 */
 static interrupt_handle_hook gInterruptHandleDrv[interrupt_type_MAX] = {NULL};
-void * interrupt_handle(interrupt_type_t type, void * pArg)
+static void * interrupt_handle(interrupt_type_t type, void * pArg)
 {
 	if (NULL != gInterruptHandleDrv[type])
 	{
@@ -114,7 +114,7 @@ void * interrupt_handle(interrupt_type_t type, void * pArg)
  * bit5由EINT8~EINT23公用
  */
 
-interrupt_type_t interrupt_status_eintpend_get(void)
+static interrupt_type_t interrupt_status_eintpend_get(void)
 {
 	uint32 eintPend = 0x0;
 	interrupt_type_t occurInterrupt = interrupt_type_MAX;
@@ -189,7 +189,7 @@ interrupt_type_t interrupt_status_eintpend_get(void)
 	return occurInterrupt;
 }
 
-interrupt_type_t interrupt_status_subsrcpnd_get(void)
+static interrupt_type_t interrupt_status_subsrcpnd_get(void)
 {
 	interrupt_type_t occurInterrupt = interrupt_type_MAX;
 	
@@ -206,7 +206,7 @@ interrupt_type_t interrupt_status_subsrcpnd_get(void)
 }
 
 /* clear subsrcpnd中断源 */
-void interrupt_status_clear_subssrcpnd(interrupt_type_t type)
+static void interrupt_status_clear_subsrcpnd(interrupt_type_t type)
 {
 	switch (type)
 	{
@@ -223,7 +223,7 @@ void interrupt_status_clear_subssrcpnd(interrupt_type_t type)
 
 
 /* clear 外部中断源 */
-void interrupt_status_clear_eintpend(interrupt_type_t type)
+static void interrupt_status_clear_eintpend(interrupt_type_t type)
 {
 	switch (type)
 	{
@@ -293,7 +293,7 @@ void interrupt_status_clear_eintpend(interrupt_type_t type)
 }
 
 /* clear 中断源 */
-void interrupt_status_clear_srcpend(interrupt_type_t type)
+static void interrupt_status_clear_srcpend(interrupt_type_t type)
 {
 	switch (type) {
 		case interrupt_type_EXT_INT0:
@@ -417,7 +417,7 @@ void interrupt_status_clear_srcpend(interrupt_type_t type)
 }
 
 /* clear 中断 */
-void interrupt_status_clear_intpend(interrupt_type_t type)
+static void interrupt_status_clear_intpend(interrupt_type_t type)
 {
 	switch (type) {
 		case interrupt_type_EXT_INT0:
@@ -768,7 +768,7 @@ static void interrupt_enable_set_eintmask
 }
 
 /* 中断状态获取，返回指定类型中断是否产生，以及实际产生的中断类型 */
-BOOL interrupt_status_get
+static BOOL interrupt_status_get
 (
 	interrupt_type_t type, 			/* 判断的中断类型 */
 	interrupt_type_t * real			/* 当前CPU处理的实际中断 */
@@ -909,7 +909,7 @@ BOOL interrupt_status_get
  * 虽然INTPND已经clear掉，如源头未clear，导致又一次向中断控制器request
  *
  */
-void interrupt_status_clear(interrupt_type_t type)
+static void interrupt_status_clear(interrupt_type_t type)
 {
 	/*
 	 * BUG解决：
@@ -930,7 +930,7 @@ void interrupt_status_clear(interrupt_type_t type)
 	SRCPNDr = srcpnd;
 	INTPNDr = intpnd;
 	#else
-	(void)interrupt_status_clear_subssrcpnd(type);
+	(void)interrupt_status_clear_subsrcpnd(type);
 	(void)interrupt_status_clear_eintpend(type);
 	(void)interrupt_status_clear_srcpend(type);
 	(void)interrupt_status_clear_intpend(type);
@@ -964,7 +964,7 @@ BOOL interrupt_register
 	
 	gInterruptHandleDrv[type] = interruptHandle;
 	interrupt_controller_enable_set(type, TRUE);
-
+	print_screen("\r\n register interrupt %s success!", gInterruptTypeStr[type]);
 	return TRUE;
 }
 

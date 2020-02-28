@@ -16,6 +16,8 @@
 #include <paletee.h>
 #include <adc.h>
 #include <touchScreenLib.h>
+#include <i2c.h>
+#include <at24cxx.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -35,7 +37,7 @@
 #define TEST_OBJ_NAND_FLASH
 #define TEST_OBJ_LCD
 /* 没有外部扩展插座没办法测 */
-#define TEST_OBJ_ADC_VOLTAGE	(FALSE)
+#define TEST_OBJ_ADC_VOLTAGE	(TRUE)
 #define TEST_OBJ_TOUCH_SCREEN
 #define TEST_OBJ_IIC_EEPROM
 
@@ -1416,12 +1418,12 @@ void test_adc_voltage(void)
 		fractionaPart = (uint32)((vol - integralPart) * 10000);
 
 		/* 串口打印 */
-		print_screen("\r\n read ADC val:%d \n\r", val);
-		print_screen("\r ADC read Voltage: %d.%04d (V).", integralPart, fractionaPart);
+		print_screen("\r read ADC val:%d. ADC read Voltage: %d.%04d (V).    ", 
+			val, integralPart, fractionaPart);
 		
 		/* LCD打印 */
-		print_screen_lcd(0,16, "\n\r read ADC val:%d \n\r", val);
-		print_screen_lcd(0,32, "\r ADC read Voltage: %d.%04d (V).", integralPart, fractionaPart);
+		print_screen_lcd(0,16, "\r read ADC val:%d. ADC read Voltage: %d.%04d (V).    ", 
+			val, integralPart, fractionaPart);
 	}
 #else
 	print_screen("\r\n adc test voltage invalid!!! \n\r");
@@ -1473,9 +1475,167 @@ void test_adc_touch_screen(void)
 #endif
 
 #ifdef TEST_OBJ_IIC_EEPROM 
+
+#define AT24CXX_E2PROM_MAX_ADDR	(256)
+
+void test_at24cxx_e2prom_i2c_read(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 offset = 0x0;
+	uint32 readLen = 0;	
+	int ret = 0;
+	
+	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", AT24CXX_E2PROM_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &offset))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
+		
+		if (tool_atoui((const char *)str, &readLen))
+		{
+			print_screen("\r\n Input startAddr:%x, readLen:%d", offset, readLen);
+			if (readLen > sizeof(gDataBuf)) {
+				print_screen("\r\n Read up to %d bytes!!", sizeof(gDataBuf));
+				goto err_ret;
+			}
+			ret = at24cxx_read_random((uint8)offset, gDataBuf, readLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+	
+	print_hexStr_multiple(gDataBuf, readLen, offset);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+void test_at24cxx_e2prom_i2c_write(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 offset = 0x0;
+	int writeLen = 0;
+	int ret = 0;
+	
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for write[addr format 0x0~%x]:", AT24CXX_E2PROM_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &offset))
+	{
+		/* 获取要写的值 */
+		print_screen("\r\n Enter string for write(max len %d):", sizeof(gDataBuf));
+		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+		(void)get_line(gDataBuf, sizeof(gDataBuf));
+		writeLen = tool_strlen(gDataBuf);
+		print_screen("\r\n write %s len is %d", gDataBuf, writeLen);
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	ret = at24cxx_write_bytes((uint8)offset, gDataBuf, writeLen);
+	if (ret != OK)
+	{
+		print_screen("\r\n write offset:%d, writeLen:%d, failed!", offset, writeLen);		
+	}
+	
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
 void test_i2c_e2prom(void)
 {
+	char selectOption = '\n';
+	BOOL isFirst = TRUE;
+	BOOL ismenuChoose = FALSE;
 
+	/* 初始化 */
+	i2c_init();
+	
+	while(TRUE) {
+
+		if (isFirst || ismenuChoose)
+		{
+			isFirst = FALSE;
+			ismenuChoose = FALSE;
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n AT24CXX E2PROM TEST OBJ OPTIONALS");
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n [r]read AT24CXX E2PROM test.");
+			print_screen("\r\n [w]write AT24CXX E2PROM test.");
+			print_screen("\r\n [?]Menu info.");
+			print_screen("\r\n [h]Menu info.");
+			print_screen("\r\n [q]quit.");
+			print_screen("\r\n -------------------------------------------------------------");
+			
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+		else 
+		{
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+
+		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+		{
+			print_screen("\r\n Select optional is [%c]", selectOption);
+		}
+		
+		switch (selectOption) {
+			case 'r':
+			case 'R':
+				test_at24cxx_e2prom_i2c_read();
+				break;
+			
+			case 'w':
+			case 'W':
+				test_at24cxx_e2prom_i2c_write();
+				break;
+
+			case '?':
+			case 'h':
+				ismenuChoose = TRUE;
+				break;
+			
+			case 'q':
+			case 'Q':
+				return;
+
+			default:
+				if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+				{
+					print_screen("\r\n Select optional [ %c ] is invalid!!!", 
+						selectOption, selectOption);
+				}
+				break;
+		}
+	}
+	
+	return;
 }
+
 #endif
 

@@ -8,10 +8,10 @@
 
 /* 设置指定寄存器一个bit */
 #define SOC_S3C2440_REG_BIT_SET(reg, bit, value) \
-	((reg) &= ~(0x1 << (bit)), (reg) |= (((value) << (bit)) & 0x1))
+	((reg) &= ~(0x1 << (bit)), (reg) |= (((value) & 0x1) << (bit)))
 
 /* 设置指定寄存器多个bit */
 #define SOC_S3C2440_REG_BITS_SET(reg, fieldstart, mask, value) \
-	((reg) &= ~(mask << fieldstart), (reg) |= ((((value) & (mask)) << (fieldstart))))\
+	((reg) &= ~(mask << fieldstart), (reg) |= ((((value) & (mask)) << (fieldstart))))
 
 #endif	/* _SOC_S3C2440_REGISTER_OPERATOR_ */
