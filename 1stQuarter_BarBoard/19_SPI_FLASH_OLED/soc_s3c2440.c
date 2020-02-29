@@ -30,6 +30,7 @@ static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_ADC_VOLTAGE),
 	ENUM_TYPE_TO_STR(TEST_ADC_TOUCH_SCREEN),
 	ENUM_TYPE_TO_STR(TEST_I2C_E2PROM),
+	ENUM_TYPE_TO_STR(TEST_SPI_OLED_FLASH),
 	ENUM_TYPE_TO_STR(TEST_MAX)
 };
 	
@@ -45,7 +46,7 @@ int soc_s3c2440_main(void)
 	test_choose = TEST_SWI_EXCEPTION;
 #endif
 
-	test_choose = TEST_I2C_E2PROM;
+	test_choose = TEST_SPI_OLED_FLASH;
 
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
@@ -110,6 +111,9 @@ int soc_s3c2440_main(void)
 			test_interrupt_ext_key_init();
 			test_i2c_e2prom();
 			test_adc_voltage();
+		case TEST_SPI_OLED_FLASH:
+			test_spi_oled_flash();
+			break;
 		default:
 			print_screen("\r\nNo have to test operation!");
 			break;

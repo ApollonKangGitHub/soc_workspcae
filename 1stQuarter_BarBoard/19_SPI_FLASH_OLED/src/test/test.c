@@ -18,6 +18,8 @@
 #include <touchScreenLib.h>
 #include <i2c.h>
 #include <at24cxx.h>
+#include <gpio_spi.h>
+#include <oled.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -40,6 +42,7 @@
 #define TEST_OBJ_ADC_VOLTAGE	(TRUE)
 #define TEST_OBJ_TOUCH_SCREEN
 #define TEST_OBJ_IIC_EEPROM
+#define TEST_OBJ_SPI_OLED_FLASH
 
 /* 依次最多擦除1M */
 #define TEST_FLASH_EARSE_MAX	(1 << 20)
@@ -1639,3 +1642,11 @@ void test_i2c_e2prom(void)
 
 #endif
 
+#ifdef TEST_OBJ_SPI_OLED_FLASH
+void test_spi_oled_flash(void)
+{
+	spi_init();
+	oled_init();
+	oled_print(0, 0, "I love C language and Embedded system.");
+}
+#endif

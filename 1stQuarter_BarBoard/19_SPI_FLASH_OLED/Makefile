@@ -43,6 +43,8 @@ INCLUDE += -I ./include/adc/
 INCLUDE += -I ./include/touchScreen/
 INCLUDE += -I ./include/e2prom/
 INCLUDE += -I ./include/i2c/
+INCLUDE += -I ./include/spi/
+INCLUDE += -I ./include/oled/
 INCLUDE += -I ./include/test/
 
 CFLAGS = $(INCLUDE) 
@@ -119,6 +121,8 @@ OBJS += ./src/i2c/i2c_controller_s3c2440.o
 OBJS += ./src/i2c/i2c_controller.o
 OBJS += ./src/i2c/i2c.o
 OBJS += ./src/e2prom/at24cxx.o
+OBJS += ./src/spi/gpio_spi.o
+OBJS += ./src/oled/oled.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o
 
