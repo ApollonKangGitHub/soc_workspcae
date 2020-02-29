@@ -166,7 +166,7 @@ static void oled_set_pos(int page, int col)
 }
 
 /* 清屏 */
-static void oled_clear(void)
+void oled_clear(void)
 {
     int page, i;
     for (page = 0; page < 8; page ++)

@@ -122,6 +122,7 @@ OBJS += ./src/i2c/i2c_controller.o
 OBJS += ./src/i2c/i2c.o
 OBJS += ./src/e2prom/at24cxx.o
 OBJS += ./src/spi/gpio_spi.o
+OBJS += ./src/spi/spi_flash.o
 OBJS += ./src/oled/oled.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o

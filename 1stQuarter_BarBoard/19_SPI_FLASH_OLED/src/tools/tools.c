@@ -1,6 +1,7 @@
 #include <tools.h>
 #include <uart.h>
 #include <font.h>
+#include <oled.h>
 #include <log.h>
 
 
@@ -635,6 +636,132 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 	return 0;
 }
 
+int print_screen_oled(int page, int col, const char * fmt, ...)
+{
+	const char * pFmt = fmt;
+	va_list pList = NULL;
+	int temp = 0;
+	int index = 0;
+	int len = 0;
+	int i = 0;
+	char * pTmp = NULL;
+	uint32 tmpLen = 0;
+	uint32 zeroNum = 0;
+	char * pStr = NULL;
+	char str[_TOOL_GET_STRING_LEN_];	/* 保证buffer长度，且清空   */
+	char strTmp[_TOOL_GET_STRING_LEN_];
+	
+	if(NULL == pFmt){
+		return -1;
+	}
+	va_start(pList, fmt);
+
+	set_buffer(strTmp, 0, sizeof(strTmp));
+	set_buffer(str, 0, sizeof(str));
+	while('\0' != *pFmt){
+		if('%' != *pFmt){
+			strTmp[index++] = *pFmt++;
+			continue;
+		}
+		pFmt++;		/* 跳过%，判断输出格式 */
+		switch(*pFmt){
+			case 'c':
+				strTmp[index++] = va_arg(pList, int);
+				break;
+			case 'u':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				temp = va_arg(pList, int);
+				/* 最大支持到2147483647的输出 */
+				if (temp >> 31) {
+					temp &= 0X7FFFFFFF;
+				}
+				tool_itoa(temp, str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 'd':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				tool_itoa(va_arg(pList, int), str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 'x':
+			case 'X':
+				i = 0;
+				set_buffer(str, 0, sizeof(str));
+				tool_uitoxa(va_arg(pList, int), str);
+				len = tool_strlen(str);
+				while (len--)
+				{
+					strTmp[index++] = str[i++];
+				}
+				break;
+			case 's':
+				i = 0;
+				pStr = va_arg(pList, char*);
+				len = tool_strlen(pStr);
+				while (len--)
+				{
+					strTmp[index++] = pStr[i++];
+				}
+				break;
+			case '0':
+			{
+				if ((*(pFmt+1) >= '2') && (*(pFmt+1) <= '9')) {
+					if (*(pFmt+2) == 'u') {
+						set_buffer(str, 0, sizeof(str));
+						temp = va_arg(pList, int);
+						if (temp >> 31) {
+							temp &= 0X7FFFFFFF;
+						}
+						pTmp = tool_itoa(temp, str);
+					}
+					else if (*(pFmt+2) == 'd') {
+						set_buffer(str, 0, sizeof(str));
+						pTmp = tool_itoa(va_arg(pList, int), str);
+					}
+					else {
+						/* 只支持%02d~%09d或%02u~%09u */
+						strTmp[index++] = *--pFmt;
+						break;
+					}
+
+					/* 格式化输出 */
+					i = 0;
+					zeroNum = 0;
+					len = tool_strlen(pTmp);
+					while((len + zeroNum) < (*(pFmt+1) - '0')){
+						strTmp[index++] = '0';
+						zeroNum++;
+					}
+					while (len--)
+					{
+						strTmp[index++] = pTmp[i++];
+					}
+					
+					/* 跳过%0xd的"xd"部分 */
+					pFmt+=2;
+				}
+				break;
+			}
+			default:
+				strTmp[index++] = *--pFmt;
+				break;
+		}
+		pFmt++;
+	}
+	va_end(pList);
+	oled_print(page,col,strTmp);
+	return 0;
+}
 
 int tool_strlen(const char * str)
 {	

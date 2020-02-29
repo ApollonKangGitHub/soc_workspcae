@@ -20,6 +20,7 @@
 #include <at24cxx.h>
 #include <gpio_spi.h>
 #include <oled.h>
+#include <spi_flash.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1645,8 +1646,17 @@ void test_i2c_e2prom(void)
 #ifdef TEST_OBJ_SPI_OLED_FLASH
 void test_spi_oled_flash(void)
 {
+	uint8 MID = 0;
+	uint8 DID = 0;
+	
 	spi_init();
 	oled_init();
 	oled_print(0, 0, "I love C language and Embedded system.");
+
+	tool_dealy(1);
+	
+	oled_clear();
+	spi_flash_read_id(&MID, &DID);
+	print_screen_oled(0, 0, "MID:%x, DID:%x", MID, DID);
 }
 #endif

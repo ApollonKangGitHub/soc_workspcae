@@ -1,6 +1,9 @@
 #include <tools.h>
 #include <soc_s3c2440_public.h>
 
+#define GPIO_SPI_CLK_HIGH	(1)
+#define GPIO_SPI_CLK_LOW	(0)
+
 /* 用GPIO模式SPI协议 */
 
 /* 设置时钟SPICLK */
@@ -12,8 +15,8 @@ static void spi_set_clk(uint8 val)
         GPGDATr &= ~GPGDAT_GPG7_DATA_BITSf;
 }
 
-/* 设置数据SPIMOSI */
-static void spi_set_do(uint8 val)
+/* 设置数据SPIMOSI输出（发送） */
+static void spi_set_do_bit(uint8 val)
 {
     if (val)
         GPGDATr |= GPGDAT_GPG6_DATA_BITSf;
@@ -21,17 +24,48 @@ static void spi_set_do(uint8 val)
         GPGDATr &= ~GPGDAT_GPG6_DATA_BITSf;
 }
 
+/* 获取数据SPIMISO输入（接收） */
+static BOOL spi_get_di_bit(void)
+{
+    if (GPGDATr & GPGDAT_GPG5_DATA_BITSf)
+        return TRUE;
+    else
+        return FALSE;
+}
+
+/* SPI写操作 */
 void spi_send_byte(uint8 data)
 {
 	uint8 bit = 0;
+	
 	for (bit = 0; bit < 8; bit++)
 	{
-		spi_set_clk(0);
-		spi_set_do(data & 0x80);
-		spi_set_clk(1);	/* 产生上升沿 */
+		spi_set_clk(GPIO_SPI_CLK_LOW);
+		spi_set_do_bit(data & 0x80);
+		spi_set_clk(GPIO_SPI_CLK_HIGH);	/* 产生上升沿 */
 		data <<= 1;
 	}
 }
+
+/* SPI读操作 */
+uint8 spi_receive_byte(void)
+{
+	uint8 bit = 0;
+	uint8 val = 0;
+	
+	for (bit = 0; bit < 8; bit++)
+	{
+		val <<= 1;
+		spi_set_clk(GPIO_SPI_CLK_LOW);
+		if (spi_get_di_bit()) {
+			val |= 0x1;
+		}
+		spi_set_clk(GPIO_SPI_CLK_HIGH);	/* 产生上升沿 */
+	}
+
+	return val;
+}
+
 
 void gpio_spi_init(void)
 {
