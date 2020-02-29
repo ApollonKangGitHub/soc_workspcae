@@ -63,6 +63,9 @@ SWI_EXCEPTION = FALSE
 #正常来讲内部中断、外部中断也只是在初始化完成后才开始初始化中断并使用，
 #但是如果在初始化代码重定位完成前，真的有中断产生，中断处理的代码还必须放在前4K
 NAND_BOOT_TEST = TRUE
+#采用GPIO输入输出直接控制按bit操作，
+#和S3C2440 SPI控制器按Byte操作两种方式操作SPI
+SPI_CONTROLLER_SELECT = TRUE
 
 ifeq ($(NAND_BOOT_TEST), TRUE) 
 	CC += -D TEST_NAND_COMMENT_USELESS_CODE=TRUE
@@ -88,6 +91,12 @@ ifeq ($(SWI_EXCEPTION), TRUE)
 	CC += -D SOC_S3C2440_SWI_INSTRUCTION_TEST=TRUE
 else 
 	CC += -D SOC_S3C2440_SWI_INSTRUCTION_TEST=FALSE
+endif 
+
+ifeq ($(SPI_CONTROLLER_SELECT), TRUE) 
+	CC += -D SOC_S3C2440_SPI_CONTROLLER=TRUE
+else 
+	CC += -D SOC_S3C2440_SPI_CONTROLLER=FALSE
 endif 
 
 START = start.o
@@ -121,11 +130,16 @@ OBJS += ./src/i2c/i2c_controller_s3c2440.o
 OBJS += ./src/i2c/i2c_controller.o
 OBJS += ./src/i2c/i2c.o
 OBJS += ./src/e2prom/at24cxx.o
-OBJS += ./src/spi/gpio_spi.o
 OBJS += ./src/spi/spi_flash.o
 OBJS += ./src/oled/oled.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o
+
+ifeq ($(SPI_CONTROLLER_SELECT), TRUE) 
+	OBJS += ./src/spi/spi_controller_s3c2440.o
+else 
+	OBJS += ./src/spi/gpio_spi.o
+endif 
 
 ALLOBJS := 
 ALLOBJS += $(START)

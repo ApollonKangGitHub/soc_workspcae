@@ -18,11 +18,16 @@
 #include <touchScreenLib.h>
 #include <i2c.h>
 #include <at24cxx.h>
-#include <gpio_spi.h>
 #include <oled.h>
 #include <spi_flash.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
+
+#if (FALSE == SOC_S3C2440_SPI_CONTROLLER)
+#include <gpio_spi.h>
+#else
+#include <spi_controller_s3c2440.h>
+#endif
 
 /*
  * 这些模块测试对象宏，

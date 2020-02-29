@@ -101,5 +101,7 @@ void spi_init(void)
 {
 	/* GPIO模拟SPI引脚初始化 */
 	gpio_spi_init();
+
+	print_screen("\r\n SPI gpio init succeed!");
 }
 

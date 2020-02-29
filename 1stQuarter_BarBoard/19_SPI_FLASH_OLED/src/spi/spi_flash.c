@@ -1,6 +1,11 @@
 #include <tools.h>
-#include <gpio_spi.h>
 #include <soc_s3c2440_public.h>
+
+#if (FALSE == SOC_S3C2440_SPI_CONTROLLER)
+#include <gpio_spi.h>
+#else
+#include <spi_controller_s3c2440.h>
+#endif
 
 #define SPI_FLASH_READ_ID_CMD			(0x90)
 #define SPI_FLASH_READ_ID_ADDR			(0x0)

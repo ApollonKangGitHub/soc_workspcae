@@ -391,5 +391,35 @@
 #define IICDSr						__REG_VALUE(ADDR_IICDSr)
 
 /* ################################################################################################################################## */
+/* ################################################# SPI Controller register ####################################################### */
+
+#define	ADDR_SPCON0r		(0x59000000)
+#define	ADDR_SPSTA0r		(0x59000004)
+#define	ADDR_SPPIN0r		(0x59000008)
+#define	ADDR_SPPRE0r		(0x5900000C)
+#define	ADDR_SPTDAT0r		(0x59000010)
+#define	ADDR_SPRDAT0r		(0x59000014)
+
+#define	ADDR_SPCON1r		(0x59000020)
+#define	ADDR_SPSTA1r		(0x59000024)
+#define	ADDR_SPPIN1r		(0x59000028)
+#define	ADDR_SPPRE1r		(0x5900002C)
+#define	ADDR_SPTDAT1r		(0x59000030)
+#define	ADDR_SPRDAT1r 		(0x59000034)
+
+
+#define	SPCON0r				__REG_VALUE(ADDR_SPCON0r)
+#define	SPSTA0r				__REG_VALUE(ADDR_SPSTA0r)
+#define	SPPIN0r				__REG_VALUE(ADDR_SPPIN0r)
+#define	SPPRE0r				__REG_VALUE(ADDR_SPPRE0r)
+#define	SPTDAT0r			__REG_VALUE_BYTE(ADDR_SPTDAT0r)
+#define	SPRDAT0r			__REG_VALUE_BYTE(ADDR_SPRDAT0r)
+		
+#define	SPCON1r				__REG_VALUE(ADDR_SPCON1r)
+#define	SPSTA1r				__REG_VALUE(ADDR_SPSTA1r)
+#define	SPPIN1r				__REG_VALUE(ADDR_SPPIN1r)
+#define	SPPRE1r				__REG_VALUE(ADDR_SPPRE1r)
+#define	SPTDAT1r			__REG_VALUE_BYTE(ADDR_SPTDAT1r)
+#define	SPRDAT1r 			__REG_VALUE_BYTE(ADDR_SPRDAT1r)
 
 #endif /* _SOC_S3C2440_REG_H_ */
