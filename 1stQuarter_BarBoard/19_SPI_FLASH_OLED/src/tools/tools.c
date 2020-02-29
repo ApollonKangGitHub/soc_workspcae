@@ -531,7 +531,7 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 
 	set_buffer(strTmp, 0, sizeof(strTmp));
 	set_buffer(str, 0, sizeof(str));
-	while('\0' != *pFmt){
+	while(('\0' != *pFmt) && (index < _TOOL_GET_STRING_LEN_)){
 		if('%' != *pFmt){
 			strTmp[index++] = *pFmt++;
 			continue;
@@ -551,7 +551,7 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 				}
 				tool_itoa(temp, str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -561,7 +561,7 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 				set_buffer(str, 0, sizeof(str));
 				tool_itoa(va_arg(pList, int), str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -572,7 +572,7 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 				set_buffer(str, 0, sizeof(str));
 				tool_uitoxa(va_arg(pList, int), str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -581,7 +581,7 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 				i = 0;
 				pStr = va_arg(pList, char*);
 				len = tool_strlen(pStr);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = pStr[i++];
 				}
@@ -611,11 +611,13 @@ int print_screen_lcd(int x, int y, const char * fmt, ...)
 					i = 0;
 					zeroNum = 0;
 					len = tool_strlen(pTmp);
-					while((len + zeroNum) < (*(pFmt+1) - '0')){
+					while (((len + zeroNum) < (*(pFmt+1) - '0')) 
+							&& (index < _TOOL_GET_STRING_LEN_))
+					{
 						strTmp[index++] = '0';
 						zeroNum++;
 					}
-					while (len--)
+					while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 					{
 						strTmp[index++] = pTmp[i++];
 					}
@@ -658,7 +660,7 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 
 	set_buffer(strTmp, 0, sizeof(strTmp));
 	set_buffer(str, 0, sizeof(str));
-	while('\0' != *pFmt){
+	while(('\0' != *pFmt) && (index < _TOOL_GET_STRING_LEN_)){
 		if('%' != *pFmt){
 			strTmp[index++] = *pFmt++;
 			continue;
@@ -678,7 +680,7 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 				}
 				tool_itoa(temp, str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -688,7 +690,7 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 				set_buffer(str, 0, sizeof(str));
 				tool_itoa(va_arg(pList, int), str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -699,7 +701,7 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 				set_buffer(str, 0, sizeof(str));
 				tool_uitoxa(va_arg(pList, int), str);
 				len = tool_strlen(str);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = str[i++];
 				}
@@ -708,7 +710,7 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 				i = 0;
 				pStr = va_arg(pList, char*);
 				len = tool_strlen(pStr);
-				while (len--)
+				while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 				{
 					strTmp[index++] = pStr[i++];
 				}
@@ -738,11 +740,13 @@ int print_screen_oled(int page, int col, const char * fmt, ...)
 					i = 0;
 					zeroNum = 0;
 					len = tool_strlen(pTmp);
-					while((len + zeroNum) < (*(pFmt+1) - '0')){
+					while (((len + zeroNum) < (*(pFmt+1) - '0')) 
+							&& (index < _TOOL_GET_STRING_LEN_)) 
+					{
 						strTmp[index++] = '0';
 						zeroNum++;
 					}
-					while (len--)
+					while ((len--) && (index < _TOOL_GET_STRING_LEN_))
 					{
 						strTmp[index++] = pTmp[i++];
 					}

@@ -183,17 +183,26 @@ void oled_clear(void)
 void oled_putchar(int page, int col, char ch)
 {
 	int i = 0;
-	
-	/* 得到字模 */
-	const unsigned char *dots = oled_asc2_8x16[ch - ' '];
+	const unsigned char *dots = NULL;
 
-	/* 发给OLED */
+	/* 得到字模，未定义字符显示'.' */
+	if ((ch - ' ' < 0) || ch - ' ' > 93) 
+	{
+		dots = oled_asc2_8x16['.' - ' '];
+	}
+	else
+	{
+		dots = oled_asc2_8x16[ch - ' '];
+	}
+
+	/* 发前8行POS给OLED */
 	oled_set_pos(page, col);
 	
 	/* 发出8字节数据 */
 	for (i = 0; i < 8; i++)
 		oled_write_data(dots[i]);
 
+	/* 发后8行POS给OLED */
 	oled_set_pos(page+1, col);
 	
 	/* 发出8字节数据 */

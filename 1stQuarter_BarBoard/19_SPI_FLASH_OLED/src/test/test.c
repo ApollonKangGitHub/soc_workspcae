@@ -1644,19 +1644,216 @@ void test_i2c_e2prom(void)
 #endif
 
 #ifdef TEST_OBJ_SPI_OLED_FLASH
+#define SPI_FLASH_MAX_ADDR		(4096)
+
+void test_spi_flash_earse(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 startAddr = 0x0;
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for earse[addr format 0x0~%x]:", SPI_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		print_screen("\r\n Input startAddr:%x.", startAddr);
+	}
+	else
+	{
+		goto err_ret;
+	}
+	print_screen("\r\n -------------------------------------------------------------");
+	spi_flash_earse(startAddr);
+	print_screen("\r\n -------------------------------------------------------------");
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+void test_spi_flash_read(void)
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 startAddr = 0x0;
+	uint32 readLen = 0;	
+	
+	set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for read[addr format 0x0~%x]:", SPI_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &startAddr))
+	{
+		/* 获取长度 */
+		print_screen("\r\n Enter read bytes number[1~%d]:", sizeof(gDataBuf));
+		set_buffer(str, 0, sizeof(str));
+		(void)get_word(str, sizeof(str));
+		
+		if (tool_atoui((const char *)str, &readLen))
+		{
+			print_screen("\r\n Input startAddr:%x, readLen:%d", startAddr, readLen);
+			if (readLen > sizeof(gDataBuf)) {
+				print_screen("\r\n Read up to %d bytes!!", sizeof(gDataBuf));
+				goto err_ret;
+			}
+			spi_flash_read(startAddr, gDataBuf, readLen);
+		}
+		else 
+		{
+			goto err_ret;
+		}
+	}
+	else
+	{
+		goto err_ret;
+	}
+	
+	print_hexStr_multiple(gDataBuf, readLen, startAddr);
+	oled_clear();	
+	print_screen_oled(0, 0, "read data: %s",  gDataBuf);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
+void test_spi_flash_write(void )
+{
+	char str[_TOOL_GET_STRING_LEN_];
+	uint32 writeAddr = 0x0;
+	uint16 writeVal = 0;	
+	int writeLen = 0;
+	int i = 0;
+	int j = 1;
+	
+	/* 获取地址 */
+	print_screen("\r\n Enter start address for write[addr format 0x0~%x]:", SPI_FLASH_MAX_ADDR);
+	set_buffer(str, 0, sizeof(str));
+	(void)get_word(str, sizeof(str));
+	
+	if (tool_atoux((const char *)str, &writeAddr))
+	{
+		/* 获取要写的值 */
+		print_screen("\r\n Enter string for write(max len %d):", sizeof(gDataBuf));
+		set_buffer(gDataBuf, 0, sizeof(gDataBuf));
+		(void)get_line(gDataBuf, sizeof(gDataBuf));
+		writeLen = tool_strlen(gDataBuf);
+		print_screen("\r\n write %s len is %d", gDataBuf, writeLen);
+	}
+	else
+	{
+		goto err_ret;
+	}
+
+	spi_flash_write(writeAddr, gDataBuf, writeLen);
+	oled_clear();
+	print_screen_oled(0, 0, "write data: %s",  gDataBuf);
+	return;
+	
+err_ret:
+	print_screen("\r\n Invalid input %s!!", str);
+	return;
+}
+
 void test_spi_oled_flash(void)
 {
 	uint8 MID = 0;
 	uint8 DID = 0;
-	
+
+	/* OLED显示测试 */
 	spi_init();
 	oled_init();
 	oled_print(0, 0, "I love C language and Embedded system.");
 
 	tool_dealy(1);
-	
+
+	/* SPI FLASH Read ID测试 */
 	oled_clear();
 	spi_flash_read_id(&MID, &DID);
-	print_screen_oled(0, 0, "MID:%x, DID:%x", MID, DID);
+	print_screen_oled(0, 0, "MID:%x, DID:%x.", MID, DID);
+
+	/* SPI读写测试 */
+	{
+		char selectOption = '\n';
+		BOOL isFirst = TRUE;
+		BOOL ismenuChoose = FALSE;
+		
+		spi_flash_init();
+		
+		while(TRUE) {
+	
+			if (isFirst || ismenuChoose)
+			{
+				isFirst = FALSE;
+				ismenuChoose = FALSE;
+
+				print_screen("\r\n -------------------------------------------------------------");
+				print_screen("\r\n SPI FLASH TEST OBJ OPTIONALS");
+				print_screen("\r\n -------------------------------------------------------------");
+				print_screen("\r\n [e]erase spi flash test.");
+				print_screen("\r\n [r]read spi flash test.");
+				print_screen("\r\n [w]write spi flash test.");
+				print_screen("\r\n [?]Menu info.");
+				print_screen("\r\n [h]Menu info.");
+				print_screen("\r\n [q]quit.");
+				print_screen("\r\n -------------------------------------------------------------");
+				
+				print_screen("\r\n Enter selection: ");
+				selectOption = tool_getChar();
+			}
+			else 
+			{
+				print_screen("\r\n Enter selection: ");
+				selectOption = tool_getChar();
+			}
+	
+			if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+			{
+				print_screen("\r\n Select optional is [%c]", selectOption);
+			}
+			
+			switch (selectOption) {
+				case 'e':
+				case 'E':
+					test_spi_flash_earse();
+					break;
+	
+				case 'r':
+				case 'R':
+					test_spi_flash_read();
+					break;
+				
+				case 'w':
+				case 'W':
+					test_spi_flash_write();
+					break;
+	
+				case '?':
+				case 'h':
+					ismenuChoose = TRUE;
+					break;
+				
+				case 'q':
+				case 'Q':
+					return;
+	
+				default:
+					if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+					{
+						print_screen("\r\n Select optional [ %c ] is invalid!!!", 
+							selectOption, selectOption);
+					}
+					break;
+			}
+		}
+		
+		return;
+	}
 }
 #endif
