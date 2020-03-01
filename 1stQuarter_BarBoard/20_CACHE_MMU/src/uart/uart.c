@@ -79,30 +79,3 @@ int uart_puts(const char *s)
 	return i;
 }
 
-int uart_puts_test1(void)
-{
-	uart_putchar('\r');
-	uart_putchar('\n');
-	uart_putchar('A');
-	uart_putchar('A');
-	uart_putchar('A');
-}
-
-int uart_puts_test2(void)
-{
-	uart_putchar('\r');
-	uart_putchar('\n');
-	uart_putchar('B');
-	uart_putchar('B');
-	uart_putchar('B');
-}
-
-int uart_puts_test3(void)
-{
-	uart_putchar('\r');
-	uart_putchar('\n');
-	uart_putchar('C');
-	uart_putchar('C');
-	uart_putchar('C');
-}
-

@@ -198,8 +198,6 @@ _halt:
 
 /* 未知异常中断处理 */
 __und_inSTRuction:
-	BL uart_puts_test3
-
 	/* 先设置undefined模式的SP栈 */
 	LDR SP, =0x33f00000
 
@@ -239,8 +237,6 @@ und_exception_string:
 @异常处理函数逻辑实现：未定义指令异常
 @================================================================================
 __software_interrupt:	
-	BL uart_puts_test3
-
 	/* 先设置SWI软件中断模式(SVC管理模式)的SP栈 */
 	LDR SP, =0x33e00000
 
@@ -279,8 +275,6 @@ swi_exception_string:
 @异常处理函数逻辑实现：终止指令预取
 @================================================================================
 __abort_prefetch:		
-	BL uart_puts_test3
-
 	/* 先设置abort prefetch模式的SP栈 */
 	LDR SP, =0x33d00000
 
@@ -289,8 +283,6 @@ __abort_prefetch:
 @异常处理函数逻辑实现：终止数据访问
 @================================================================================
 __abort_data:	
-	BL uart_puts_test3
-
 	/* 先设置abort prefetch模式的SP栈 */
 	LDR SP, =0x33c00000
 	b _halt
@@ -299,9 +291,7 @@ __abort_data:
 @异常处理函数逻辑实现：保留
 @================================================================================
 __reserved_vector:	
-	BL uart_puts_test3
-
-	/* 先设置reserved模式的SP栈 */
+	 /* 先设置reserved模式的SP栈 */
 	LDR SP, =0x33b00000
 	b _halt
 
@@ -309,8 +299,6 @@ __reserved_vector:
 @异常处理函数逻辑实现：中断请求处理IRQ
 @================================================================================
 __interrupt_request:
-	BL uart_puts_test3
-
 	/* 先设置irq模式的SP栈 */
 	LDR SP, =0x33a00000
 
@@ -344,8 +332,6 @@ irq_exception_string:
 @异常处理函数逻辑实现：快速中断请求处理FIQ
 @================================================================================
 __fast_interrupt_request:
-	BL uart_puts_test3
-
 	/* 先设置fiq模式的SP栈 */
 	LDR SP, =0x33900000
 	b _halt

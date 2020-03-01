@@ -1872,13 +1872,6 @@ void test_spi_oled_flash(void)
  * 可以修改Makefile的MMU_CACHE_ENABLE变量控制编译情况
  * 来对比开启指令缓存与地址缓存前后程序运行速率
  */
-void test_mmu(uint32 v1, uint32 v2, uint32 v3)
-{
-	print_screen("\r\nconfig C1:%x, C2:%x, C3:%x", v1, v2, v3);
-}
-
-uint32 addr = (uint32)test_mmu;
-
 void test_cache_mmu(void)
 {
 	print_screen("\r\n mmu test start!");
