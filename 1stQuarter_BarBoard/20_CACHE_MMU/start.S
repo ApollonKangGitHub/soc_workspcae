@@ -10,9 +10,9 @@
 _start:
 
 @================================================================================
-@异常处向量表
+@异常处向量表,B和BL的区别，BL会保存跳转之前的下一跳指令到LR,reset不需要保存，直接B就行
 @================================================================================
-	BL __reset									/* 0x00000000:reset */
+	B __reset									/* 0x00000000:reset */
 #if 0
 	@LDR PC, =__und_inSTRuction					/* 0x00000004:未定义指令异常 */
 	@LDR PC, =__software_interrupt				/* 0x00000008:软中断 */
@@ -114,6 +114,10 @@ set_FClk:
 	LDR R0, =0x4C000004
 	LDR R1, =((0x5C << 12) | (0x1 << 4) | (0x1 << 0))
 	STR R1, [R0]
+
+/* 开启指令cache，使得操作更加流畅，如LCD清屏更快 */
+set_icache_config:
+	BL enable_icache
 	
 set_stackFor_NANDOrNor_startUp:
 	/*
@@ -346,4 +350,13 @@ __fast_interrupt_request:
 	/* 先设置fiq模式的SP栈 */
 	LDR SP, =0x33900000
 	b _halt
+
+enable_icache:
+	/* 使能ICACHE */
+	MRC P15, 0, R0, C1, C0, 0		@ 读取协处理器 CP15 的控制寄存器 C1
+	ORR R0, R0, #(0x1 << 12)		@ R0 |= (0x1 << 12)，使能控制位
+	MCR P15, 0, R0, C1, C0, 0		@ 修改后的 CP15 的控制寄存器写回去
+	
+	/* 手动恢复现场返回 */
+	MOV PC, LR
 
