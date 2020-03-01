@@ -31,6 +31,7 @@ static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_ADC_TOUCH_SCREEN),
 	ENUM_TYPE_TO_STR(TEST_I2C_E2PROM),
 	ENUM_TYPE_TO_STR(TEST_SPI_OLED_FLASH),
+	ENUM_TYPE_TO_STR(TEST_CACHE_MMU),
 	ENUM_TYPE_TO_STR(TEST_MAX)
 };
 	
@@ -48,11 +49,17 @@ int soc_s3c2440_main(void)
 
 	test_choose = TEST_LCD;
 
+#if	(TRUE == SOC_S3C2440_MMU_CACHE_ENABLE)
+	test_choose = TEST_CACHE_MMU;
+#else
+	test_choose = TEST_LCD;
+#endif
+
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
 	print_screen("\r\n---------------------------------------------------------------------------");
 
-	switch(test_choose){
+	switch(test_choose){		
 		case TEST_LED:
 			test_led();
 			break;
@@ -113,12 +120,15 @@ int soc_s3c2440_main(void)
 			test_adc_voltage();
 		case TEST_SPI_OLED_FLASH:
 			test_spi_oled_flash();
+			break;		
+		case TEST_CACHE_MMU:
+			test_cache_mmu();
 			break;
 		default:
 			print_screen("\r\nNo have to test operation!");
 			break;
 	}
-	
+
 	return 0;
 }
 

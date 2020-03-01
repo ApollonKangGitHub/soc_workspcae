@@ -20,7 +20,7 @@ LIBPATH +=-lgcc -L/opt/FriendlyARM/toolschain/4.4.3/lib/gcc/arm-none-linux-gnuea
 #大致bin文件达到800多兆
 
 #LD := arm-linux-ld -Ttext 0 -Tdata 0x30000000
-LD := arm-linux-ld -T relocation.lds
+#LD := arm-linux-ld -T relocation.lds
 OBJCOPY := arm-linux-objcopy
 OBJDUMP := arm-linux-objdump
 COPY := cp -u -v -f
@@ -44,6 +44,7 @@ INCLUDE += -I ./include/touchScreen/
 INCLUDE += -I ./include/e2prom/
 INCLUDE += -I ./include/i2c/
 INCLUDE += -I ./include/spi/
+INCLUDE += -I ./include/mmu/
 INCLUDE += -I ./include/oled/
 INCLUDE += -I ./include/test/
 
@@ -66,6 +67,8 @@ NAND_BOOT_TEST = TRUE
 #采用GPIO输入输出直接控制按bit操作，
 #和S3C2440 SPI控制器按Byte操作两种方式操作SPI
 SPI_CONTROLLER_SELECT = TRUE
+#默认MMU和指令CACHE、数据cache开启
+MMU_CACHE_ENABLE = TRUE
 
 ifeq ($(NAND_BOOT_TEST), TRUE) 
 	CC += -D TEST_NAND_COMMENT_USELESS_CODE=TRUE
@@ -99,19 +102,32 @@ else
 	CC += -D SOC_S3C2440_SPI_CONTROLLER=FALSE
 endif 
 
-START = start.o
 #ASMFILE = lib1funcs.o
+
+ifeq ($(MMU_CACHE_ENABLE), TRUE) 
+	CC += -D SOC_S3C2440_MMU_CACHE_ENABLE=TRUE
+	LD := arm-linux-ld -T relocation_CacheMMU.lds
+	START += start_CacheMMU.o
+	OBJS += ./src/mmu/mmu.o
+else 
+	CC += -D SOC_S3C2440_MMU_CACHE_ENABLE=FALSE
+	START += start.o
+	LD := arm-linux-ld -T relocation.lds
+endif 
 
 OBJS += ./src/memCtrl/memCtrl.o
 OBJS += ./src/nand_flash/nand_flash.o
 OBJS += ./src/soc_s3c2440_init.o
 OBJS += ./src/uart/uart.o
+
+#以上代码必须保证在4K之前，以可以运行在NAND上
 OBJS += ./src/exception/interrupt.o
 OBJS += ./src/exception/exception.o
 OBJS += ./src/led/led.o
 OBJS += ./src/tools/tools.o
 OBJS += ./src/log/syslog.o
 OBJS += ./src/timer/timer.o
+OBJS += ./src/nand_flash/nand_flash_lib.o
 OBJS += ./src/nor_flash/nor_flash.o
 OBJS += ./src/paletee/paletee.o
 OBJS += ./src/frameBuffer/frameBuffer.o

@@ -1,7 +1,7 @@
 #include <tools.h>
-#include <nand_flash.h>
-#include <memCtrl.h>
 #include <log.h>
+#include <memCtrl.h>
+#include <nand_flash_lib.h>
 #include <soc_s3c2440_init.h>
 
 /* 如果0地址可以直接写则是Nand启动，否则是Nor启动 */
@@ -80,7 +80,11 @@ void bss_clear(void)
 
 void relocate_init(void)
 {
+#if	(FALSE == SOC_S3C2440_MMU_CACHE_ENABLE)
 	sdram_init(SOC_MEMCTRL_BANK_SDRAM_ALL);
+#else
+	/* MMU开启时sdram初始化放在前面做 */
+#endif
 	code_relocation();
 	bss_clear();
 }

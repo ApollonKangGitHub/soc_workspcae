@@ -11,6 +11,8 @@
 
 void uart_init()
 {
+	int delay = 1000;
+	
 	/* 设置多功能引脚用于串口(TXD0/GPH2、RXD0/GPH3) */
 	GPHCONr &= ~(GPHCON_GPH2_CONF_BITSf | GPHCON_GPH3_CONF_BITSf);
 	GPHCONr |= ((GPHCON_GPH2_TXD0 << GPIOCON_PIN2_START_BIT) | (GPHCON_GPH3_RXD0 << GPIOCON_PIN3_START_BIT));
@@ -43,6 +45,7 @@ void uart_init()
 	ULCON0r |= ((ULCON_NUM_OF_STOP_1 << ULCON_NUM_OF_STOP_START) | (ULCON_WORD_LEN_8 << ULCON_WORD_LEN_START));		/* 设置停止位和数据位大小 */
 	
 	/* 其他数据格式 */
+	while(delay--);
 }
 
 /* 非FIFO buffer版 */
@@ -76,4 +79,30 @@ int uart_puts(const char *s)
 	return i;
 }
 
+int uart_puts_test1(void)
+{
+	uart_putchar('\r');
+	uart_putchar('\n');
+	uart_putchar('A');
+	uart_putchar('A');
+	uart_putchar('A');
+}
+
+int uart_puts_test2(void)
+{
+	uart_putchar('\r');
+	uart_putchar('\n');
+	uart_putchar('B');
+	uart_putchar('B');
+	uart_putchar('B');
+}
+
+int uart_puts_test3(void)
+{
+	uart_putchar('\r');
+	uart_putchar('\n');
+	uart_putchar('C');
+	uart_putchar('C');
+	uart_putchar('C');
+}
 

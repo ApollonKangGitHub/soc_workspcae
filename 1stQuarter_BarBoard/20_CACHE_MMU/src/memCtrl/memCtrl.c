@@ -8,6 +8,7 @@
 #include <soc_s3c2440_memCtrl_field.h>
 #include <soc_s3c2440_reg.h>
 #include <memCtrl.h>
+#include <uart.h>
 
 /* 设置sdram的访问初始化设置，choose为选择的sdram枚举变量 */
 int sdram_init(SDRAM_CTRL_t choose)
@@ -24,6 +25,8 @@ int sdram_init(SDRAM_CTRL_t choose)
      * BANK6/7 memory map, bits[2:0] = 001 = 64MB/64MB
 	 */
 	BANKSIZEr = 0xb1;
+
+	uart_putchar(choose + '0');
 
 	switch(choose){
 		case SOC_MEMCTRL_BANK6_SDRAM_0:

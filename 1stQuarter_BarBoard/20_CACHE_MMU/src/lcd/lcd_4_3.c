@@ -28,7 +28,7 @@ lcd_parameters_t lcd_4_3_para = {
 	.pixel = {
 		._x_res = 480,				/* x轴，水平 */
 		._y_res = 272,				/* y轴，垂直 */
-		._bpp = 24,					/* Bit Per pixel */
+		._bpp = 8,					/* Bit Per pixel */
 	},		/* 像素分辨率 */
 	.fb_base = LCD_4_3_FB,			/* frame Buffer基地址 */
 };

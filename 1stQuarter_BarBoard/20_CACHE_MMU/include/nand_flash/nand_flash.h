@@ -1,6 +1,9 @@
 #ifndef _NAND_FLASH_H_
 #define _NAND_FLASH_H_
 
+#include <tools.h>
+#include <soc_s3c2440_public.h>
+
 #define NAND_FLASH_PAGE_SIZE			(2048)
 #define NAND_FLASH_OOB_SIZE				(64)
 #define NAND_FLASH_PAGE_END				((NAND_FLASH_PAGE_SIZE) + (NAND_FLASH_OOB_SIZE) - 1)
@@ -16,6 +19,15 @@
 #define NAND_INIT_ECC_DECODER_ENCODER	(1)	/* 初始化ECC编码解码器 */
 #define NAND_nFCE_CTRL_DISABLE			(1)	/* 高电平禁止，低电平有效，禁止片选 */
 #define NAND_NAND_CONTOLLER_ENABLE		(1)	/* 使能Nand Flash控制器 */
+
+#define NAND_FLASH_READ_BYTE()		(NFDATAr)
+#define NAND_FLASH_WRITE_BYTE(val)	(NFDATAr = (volatile uint8)(val))
+#define	NAND_FALSH_SELECT()			(NFCONTr &= ~(NAND_nFCE_CTRL_DISABLE << 1))
+#define NAND_FALSH_DESELECT()		(NFCONTr |= (NAND_nFCE_CTRL_DISABLE << 1))
+
+/* NFSTATr寄存器的 "RnB input pin." 不为高电平则处于忙状态 */
+#define NAND_FALSH_WAIT_READY(void) \
+	while(NFSTAT_RnB_STAT_READY_STATUS != (NFSTATr & NFSTAT_RnB_STAT_BUSY_BITSf));
 
 /*
  * NFSTATr
@@ -95,14 +107,6 @@ typedef struct nand_flash_info
 	uint32 pageSize;
 	uint32 totalSize;
 }nand_flash_info_t;
-
-extern void nand_flash_init(void);
-extern void nand_flash_get_mem_info(nand_flash_info_t * info);
-extern void nand_flash_data_read(uint32 addr, uint8 * buf, uint32 len);
-extern void nand_flash_oob_read(uint32 addr, uint8 * buf, uint32 len);
-extern BOOL test_nand_flash_bad_blk_check(uint32 blkIdx, uint32 pageNum);
-extern int nand_flash_earse(uint32 addr, int len);
-extern void nand_flash_write(uint32 addr, uint8 *buf, uint32 len);
 
 #endif	/* _NAND_FLASH_H_ */
 

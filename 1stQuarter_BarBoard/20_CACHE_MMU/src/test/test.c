@@ -8,6 +8,7 @@
 #include <timer.h>
 #include <nor_flash.h>
 #include <nand_flash.h>
+#include <nand_flash_lib.h>
 #include <lcd_common.h>
 #include <frameBuffer.h>
 #include <geometry.h>
@@ -19,6 +20,7 @@
 #include <i2c.h>
 #include <at24cxx.h>
 #include <oled.h>
+#include <mmu.h>
 #include <spi_flash.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
@@ -49,6 +51,7 @@
 #define TEST_OBJ_TOUCH_SCREEN
 #define TEST_OBJ_IIC_EEPROM
 #define TEST_OBJ_SPI_OLED_FLASH
+#define TEST_OBJ_CACHE_MMU
 
 /* 一次最多擦除1M */
 #define TEST_FLASH_EARSE_MAX	(1 << 20)
@@ -1481,7 +1484,7 @@ void test_adc_touch_screen(void)
 	}
 }
 
-#endif
+#endif	/* TEST_OBJ_TOUCH_SCREEN */
 
 #ifdef TEST_OBJ_IIC_EEPROM 
 
@@ -1646,7 +1649,7 @@ void test_i2c_e2prom(void)
 	return;
 }
 
-#endif
+#endif	/* TEST_OBJ_IIC_EEPROM */
 
 #ifdef TEST_OBJ_SPI_OLED_FLASH
 #define SPI_FLASH_MAX_ADDR		(4096)
@@ -1861,4 +1864,32 @@ void test_spi_oled_flash(void)
 		return;
 	}
 }
+#endif	/* TEST_OBJ_SPI_OLED_FLASH */
+
+#ifdef TEST_OBJ_CACHE_MMU
+
+/*
+ * 可以修改Makefile的MMU_CACHE_ENABLE变量控制编译情况
+ * 来对比开启指令缓存与地址缓存前后程序运行速率
+ */
+void test_mmu(uint32 v1, uint32 v2, uint32 v3)
+{
+	print_screen("\r\nconfig C1:%x, C2:%x, C3:%x", v1, v2, v3);
+}
+
+uint32 addr = (uint32)test_mmu;
+
+void test_cache_mmu(void)
+{
+	print_screen("\r\n mmu test start!");
+
+	/* 开启指令cahce之后LCD测试 */
+	test_lcd();
+#if (TRUE == SOC_S3C2440_MMU_CACHE_ENABLE)
+	(void)mmu_page_table_dump();
 #endif
+	while(TRUE);
+}
+
+#endif	/* TEST_OBJ_CACHE_MMU */
+

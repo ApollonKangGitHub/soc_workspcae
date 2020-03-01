@@ -1,5 +1,5 @@
 /*
- * Time:2020年2月7日23:46:09
+ * Time:2020年3月1日15:16:19
  * Author:Kangruojin
  * Version:1.1
  */
@@ -146,9 +146,18 @@ set_stackFor_NANDOrNor_startUp:
  */
  
 @================================================================================
-@重定位、CPU模式修改、UART初始化、主函数启动
+@UART初始化、SDRAM初始化、页表创建、MMU启动、重定位、CPU模式修改、主函数启动
 @================================================================================
 soc_s3c2440_prog_init_start:
+	/* UART init */
+	BL uart_init
+
+	MOV r0, #2
+	BL 	sdram_init
+
+	/* create page table and start mmu */
+	BL mmu_init
+
 	/* relocate memry init */
 	BL relocate_init
 
@@ -173,30 +182,10 @@ app_start:
 	MOV PC, R0
 	
 sdram_start:
-	/* UART init */
-	BL uart_init	
-
 	/* jump to soc_s3c2440_main run */
 	BL soc_s3c2440_main
 	BL test_end
-	
-/* 未定义指令异常测试 */
-#if (TRUE == SOC_S3C2440_UND_INSTRUCTION_TEST)	
-	/* 构造一条未定义指令, dead code */
-	.WORD 0xdeadc0de
-	
-/* 软件中断异常测试 */
-#elif (TRUE == SOC_S3C2440_SWI_INSTRUCTION_TEST)
-	/* 
-	 * CPU软件中断异常模式通过SWI指令来进入，
-	 * SWI指令紧接着的值可以用来区分服务类型
-	 * SWI指令和SVC指令其硬编码一致，都是0XEFxxxxxx
-	 */
-	SWI 0x1234
-	SVC 0x4321
-	.WORD 0xefabcdef
-#endif
-	
+
 soc_s3c2440_prog_over:
 	BL soc_s3c2440_over
 
@@ -209,6 +198,8 @@ _halt:
 
 /* 未知异常中断处理 */
 __und_inSTRuction:
+	BL uart_puts_test3
+
 	/* 先设置undefined模式的SP栈 */
 	LDR SP, =0x33f00000
 
@@ -248,6 +239,8 @@ und_exception_string:
 @异常处理函数逻辑实现：未定义指令异常
 @================================================================================
 __software_interrupt:	
+	BL uart_puts_test3
+
 	/* 先设置SWI软件中断模式(SVC管理模式)的SP栈 */
 	LDR SP, =0x33e00000
 
@@ -286,6 +279,8 @@ swi_exception_string:
 @异常处理函数逻辑实现：终止指令预取
 @================================================================================
 __abort_prefetch:		
+	BL uart_puts_test3
+
 	/* 先设置abort prefetch模式的SP栈 */
 	LDR SP, =0x33d00000
 
@@ -294,6 +289,8 @@ __abort_prefetch:
 @异常处理函数逻辑实现：终止数据访问
 @================================================================================
 __abort_data:	
+	BL uart_puts_test3
+
 	/* 先设置abort prefetch模式的SP栈 */
 	LDR SP, =0x33c00000
 	b _halt
@@ -301,7 +298,9 @@ __abort_data:
 @================================================================================
 @异常处理函数逻辑实现：保留
 @================================================================================
-__reserved_vector:		
+__reserved_vector:	
+	BL uart_puts_test3
+
 	/* 先设置reserved模式的SP栈 */
 	LDR SP, =0x33b00000
 	b _halt
@@ -310,6 +309,8 @@ __reserved_vector:
 @异常处理函数逻辑实现：中断请求处理IRQ
 @================================================================================
 __interrupt_request:
+	BL uart_puts_test3
+
 	/* 先设置irq模式的SP栈 */
 	LDR SP, =0x33a00000
 
@@ -343,7 +344,9 @@ irq_exception_string:
 @异常处理函数逻辑实现：快速中断请求处理FIQ
 @================================================================================
 __fast_interrupt_request:
+	BL uart_puts_test3
+
 	/* 先设置fiq模式的SP栈 */
 	LDR SP, =0x33900000
 	b _halt
-	
+

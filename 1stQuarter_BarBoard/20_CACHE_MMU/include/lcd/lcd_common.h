@@ -5,6 +5,9 @@
 #include <lcd_type.h>
 #include <lcd_controller_type.h>
 
+/*  一块无人使用的内存作为franeBuffer */
+#define	LCD_COMMON_FRAMEBUFFER_BASE	(0x32200000)
+
 /* bpp类型 */
 typedef enum {
 	bpp_type_8bits,
