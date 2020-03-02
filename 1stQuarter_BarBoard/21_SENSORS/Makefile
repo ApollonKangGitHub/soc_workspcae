@@ -46,6 +46,7 @@ INCLUDE += -I ./include/i2c/
 INCLUDE += -I ./include/spi/
 INCLUDE += -I ./include/mmu/
 INCLUDE += -I ./include/oled/
+INCLUDE += -I ./include/sensors/
 INCLUDE += -I ./include/test/
 
 CFLAGS = $(INCLUDE) 
@@ -148,6 +149,7 @@ OBJS += ./src/i2c/i2c.o
 OBJS += ./src/e2prom/at24cxx.o
 OBJS += ./src/spi/spi_flash.o
 OBJS += ./src/oled/oled.o
+OBJS += ./src/sensors/photosensitive.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o
 

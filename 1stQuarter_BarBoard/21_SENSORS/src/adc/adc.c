@@ -40,7 +40,7 @@ void adc_init(void)
 	ADCDLYr = 0x00ff;
 }
 
-void adc_input_select(adc_mux_type_t type)
+static void adc_input_select(adc_mux_type_t type)
 {
 	/* clear当前MUX输入 */	
 	ADCCONr &= ~(0x7 << 3);
@@ -120,4 +120,24 @@ int adc_read_ain0(void)
 	return (ADCDAT0r & ADC_VAL_MASK);
 }
 
+/* 读取指定channel的数据 */
+int adc_read_channel(adc_mux_type_t type)
+{
+	adc_start();
+	uint32 channelPos = 0;
+
+	adc_input_select(type);
+
+	/* 判断转换状态 */
+	while (!(ADCCONr & (1 << 15)));
+
+	/*
+	 * 返回ADC值
+	 * 		XPDATA (Normal ADC) 
+	 * 		[9:0] X-Position conversion data value
+	 * 		(include normal ADC conversion data value) 
+	 * 		Data value: 0x0 ~ 0x3FF
+	 */
+	return (ADCDAT0r & ADC_VAL_MASK);
+}
 

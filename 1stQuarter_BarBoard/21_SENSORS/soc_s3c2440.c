@@ -32,6 +32,7 @@ static char *gTestObjStr[] = {
 	ENUM_TYPE_TO_STR(TEST_I2C_E2PROM),
 	ENUM_TYPE_TO_STR(TEST_SPI_OLED_FLASH),
 	ENUM_TYPE_TO_STR(TEST_CACHE_MMU),
+	ENUM_TYPE_TO_STR(TEST_SENSORS),
 	ENUM_TYPE_TO_STR(TEST_MAX)
 };
 	
@@ -54,6 +55,8 @@ int soc_s3c2440_main(void)
 #else
 	test_choose = TEST_LCD;
 #endif
+
+	test_choose = TEST_SENSORS;
 
 	print_screen("\r\n---------------------------------------------------------------------------");
 	print_screen("\r\nSOC S3C2440 MAIN TEST %s[%d] START!!", gTestObjStr[test_choose], test_choose);
@@ -123,6 +126,9 @@ int soc_s3c2440_main(void)
 			break;		
 		case TEST_CACHE_MMU:
 			test_cache_mmu();
+			break;
+		case TEST_SENSORS:
+			test_sensors();
 			break;
 		default:
 			print_screen("\r\nNo have to test operation!");

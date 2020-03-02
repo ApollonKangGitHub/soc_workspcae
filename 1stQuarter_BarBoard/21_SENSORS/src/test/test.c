@@ -21,6 +21,7 @@
 #include <at24cxx.h>
 #include <oled.h>
 #include <mmu.h>
+#include <photosensitive.h>
 #include <spi_flash.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
@@ -52,6 +53,7 @@
 #define TEST_OBJ_IIC_EEPROM
 #define TEST_OBJ_SPI_OLED_FLASH
 #define TEST_OBJ_CACHE_MMU
+#define TEST_OBJ_SENSORS
 
 /* 一次最多擦除1M */
 #define TEST_FLASH_EARSE_MAX	(1 << 20)
@@ -1414,7 +1416,6 @@ void test_adc_voltage(void)
 
 	/* 初始化ADC */
 	adc_init();
-	adc_input_select(adc_mux_type_ain0);
 
 	print_screen("\r\n adc test voltage!!! \n\r");
 	print_screen_lcd(0,0,"\r\n adc test voltage!!! \n\r");
@@ -1422,7 +1423,7 @@ void test_adc_voltage(void)
 #if (TRUE == TEST_OBJ_ADC_VOLTAGE)	
 	while (TRUE)
 	{
-		val = adc_read_ain0();
+		val = adc_read_channel(adc_mux_type_ain0);
 		vol = (double)val / ADC_VAL_MASK * 3.3;
 
 		/* 整数和小数拆分 */
@@ -1886,3 +1887,132 @@ void test_cache_mmu(void)
 
 #endif	/* TEST_OBJ_CACHE_MMU */
 
+#ifdef TEST_OBJ_SENSORS
+
+/* 光敏电阻测试 */
+void test_photosensitive_resistor(void)
+{
+	uint32 val = 0;
+	double vol = 0.0;
+	uint32 integralPart = 0;
+	uint32 fractionaPart = 0.0;
+	uint32 testTimes = 10000;
+
+	/* 初始化ADC、初始化光敏电阻控制信息 */
+	adc_init();
+	photosensitive_init();
+	
+	print_screen_lcd(0,0, "test photosensitive resistor:\r\n");
+
+	while (TRUE)
+	{
+		/* 读取ADC 0通道，即可调电阻电压 */
+		val = adc_read_channel(adc_mux_type_ain0);
+		vol = (double)val / ADC_VAL_MASK * 3.3;
+
+		/* 整数和小数拆分 */
+		integralPart = (uint32)vol;
+		fractionaPart = (uint32)((vol - integralPart) * 10000);
+
+		/* LCD打印 */
+		print_screen_lcd(0,16, "\r read ain0 :%d. Adjustable resistor Voltage: %d.%04d(V).    ", 
+			val, integralPart, fractionaPart);
+
+		/* 读取ADC 1通道，即光敏电阻电压 */
+		val = adc_read_channel(adc_mux_type_ain1);
+		vol = (double)val / ADC_VAL_MASK * 3.3;
+
+		/* 整数和小数拆分 */
+		integralPart = (uint32)vol;
+		fractionaPart = (uint32)((vol - integralPart) * 10000);
+
+		/* LCD打印 */
+		print_screen_lcd(0,32, "\r read ain1 :%d. photosensitive resistor Voltage: %d.%04d(V).   ", 
+			val, integralPart, fractionaPart);
+
+		tool_dealy(1);
+	}
+}
+
+/* 传感器测试 */
+void test_sensors(void)
+{
+	char selectOption = '\n';
+	BOOL isFirst = TRUE;
+	BOOL ismenuChoose = FALSE;
+
+	/* 初始化LCD和frmaeBuffer */
+	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
+	(void)lcd_common_enable(TRUE);
+	(void)frameBuffer_init();
+	
+	while(TRUE) {
+		if (isFirst || ismenuChoose)
+		{
+			isFirst = FALSE;
+			ismenuChoose = FALSE;
+
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n SENSOR  TEST OBJ OPTIONALS");
+			print_screen("\r\n -------------------------------------------------------------");
+			print_screen("\r\n [p]Photosensitive resistor test.");
+			print_screen("\r\n [i]Infrared sensor test.");
+			print_screen("\r\n [T]Temperature sensor test.");
+			print_screen("\r\n [?]Menu info.");
+			print_screen("\r\n [h]Menu info.");
+			print_screen("\r\n [q]quit.");
+			print_screen("\r\n -------------------------------------------------------------");
+			
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+		else 
+		{
+			print_screen("\r\n Enter selection: ");
+			selectOption = tool_getChar();
+		}
+
+		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+		{
+			print_screen("\r\n Select optional is [%c]", selectOption);
+		}
+		
+		switch (selectOption) {
+			case 'p':
+			case 'P':
+				test_photosensitive_resistor();
+				break;
+
+			case 'i':
+			case 'I':
+				//test_infrared_sensor();
+				break;
+			
+			case 't':
+			case 'T':
+				//test_temperature_sensor();
+				break;
+
+			case '?':
+			case 'h':
+				ismenuChoose = TRUE;
+				break;
+			
+			case 'q':
+			case 'Q':
+				return;
+
+			default:
+				if ((selectOption >= 0x20) && (selectOption <= 0xFF))
+				{
+					print_screen("\r\n Select optional [ %c ] is invalid!!!", 
+						selectOption, selectOption);
+				}
+				break;
+		}
+	}
+	
+	return;
+}
+
+#endif	/* TEST_OBJ_SENSORS */

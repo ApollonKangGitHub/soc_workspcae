@@ -23,6 +23,7 @@ typedef enum{
 	TEST_I2C_E2PROM,					/* I2C E2PROM操作 */
 	TEST_SPI_OLED_FLASH,				/* SPI访问FLASH和OLED */
 	TEST_CACHE_MMU,						/* CACHE和MMU测试 */
+	TEST_SENSORS,						/* 传感器测试 */
 	TEST_MAX					/* lase please */
 }soc_test_t;
 
@@ -53,5 +54,6 @@ extern void test_adc_voltage(void);
 extern void test_adc_touch_screen(void);
 extern void test_spi_oled_flash(void);
 extern void test_cache_mmu(void);
+extern void test_sensors(void);
 
 #endif /* __TEST_H__ */

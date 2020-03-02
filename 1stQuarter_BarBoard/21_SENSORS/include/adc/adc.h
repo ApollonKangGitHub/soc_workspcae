@@ -26,6 +26,6 @@ extern uint32 adc_read_x(void);
 extern uint32 adc_read_y(void);
 extern void adc_delay(uint32 millisecond);
 extern int adc_read_ain0(void);
-extern void adc_input_select(adc_mux_type_t type);
+extern int adc_read_channel(adc_mux_type_t type);
 	
 #endif	/* _ADC_H_ */
