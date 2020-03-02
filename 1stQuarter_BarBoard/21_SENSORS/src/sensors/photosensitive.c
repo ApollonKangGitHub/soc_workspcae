@@ -3,14 +3,23 @@
 #include <adc.h>
 #include <soc_s3c2440_public.h>
 
-#define PHOTOSENSITIVE_DETECT_DARKEN	(1)		/* 电阻检测到变暗 */
-#define PHOTOSENSITIVE_DETECT_LIGHT		(0)		/* 电阻检测到变亮 */
+#define PHOTOSENSITIVE_DETECT_DARKEN	(TRUE)		/* 电阻检测到变暗 */
+#define PHOTOSENSITIVE_DETECT_LIGHT		(FALSE)		/* 电阻检测到变亮 */
 
 /* 中断处理函数 */
 static void * photosensitive_eint15_handle(void * pArgv)
 {
-	/* 读取GPGDATA寄存器判断是上升沿还是下降沿触发 */	
-	if ((GPGDATr & GPGDAT_GPG7_DATA_BITSf) == PHOTOSENSITIVE_DETECT_DARKEN)
+	BOOL isDarken = FALSE;
+	isDarken = (GPGDATr & GPGDAT_GPG7_DATA_BITSf) 
+			? (PHOTOSENSITIVE_DETECT_DARKEN) 
+			: (PHOTOSENSITIVE_DETECT_LIGHT);
+
+	/* 
+	 * 读取GPGDATA寄存器判断是上升沿还是下降沿触发
+	 * 比较器的正相还是反相输出，决定可调电阻还是光敏电阻阻值大
+	 * 进一步得出是流明值/光通量变大还是变小
+	 */	
+	if (isDarken)
 	{
 		print_screen("\r\n change to darken.");
 	}
