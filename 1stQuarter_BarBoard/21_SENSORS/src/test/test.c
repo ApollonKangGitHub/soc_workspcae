@@ -1935,7 +1935,8 @@ void test_photosensitive_resistor(void)
 }
 
 /* 高精度延时函数测试，可修改makefile的MMU_CACHE_ENABLE
- * 来对比开启/关闭指令缓存和数据缓存delay函数的精度的变化
+ * 来对比开启/关闭指令缓存和数据缓存delay函数的精度的变化
+ * 试着看了下，差别不是特别大，可能是因为delay的结构比较简单数据量和指令量都比较小
  */
 void test_high_precision_delay(void)
 {
