@@ -100,7 +100,7 @@ int soc_s3c2440_main(void)
 			print_screen("\r\nExternal key interrupt and internal timer interrupt init succeed!");
 			while(TRUE) {
 				timer_0_debug_print();
-				tool_dealy(2);
+				tool_delay(1);
 			}
 			break;
 		case TEST_NOR_FLASH:

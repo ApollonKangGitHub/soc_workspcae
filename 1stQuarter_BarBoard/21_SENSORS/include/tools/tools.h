@@ -62,7 +62,9 @@ typedef enum{
 #define tool_putChar uart_putchar
 #define tool_puts uart_puts
 
-extern void tool_dealy(uint16 sec);
+extern void tool_delay(int sec);
+extern void tool_mdealy(int msec);
+extern void tool_udealy(int usec);
 extern float tool_abs_f(float value);
 extern BOOL tool_isBigEndOrder(void);
 extern int tool_strnpy(char * dst, char * src, int len);

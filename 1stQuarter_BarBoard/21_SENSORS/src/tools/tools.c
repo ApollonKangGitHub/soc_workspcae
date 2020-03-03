@@ -3,7 +3,7 @@
 #include <font.h>
 #include <oled.h>
 #include <log.h>
-
+#include <timer.h>
 
 /*
  * 2020-2-16 15:44:27
@@ -18,15 +18,17 @@ int raise (int signum)
 	return 0;
 }
 
-void tool_dealy(uint16 sec)
+void tool_delay(int sec)
 {
-	int delay = 400000;
-	while(sec--){
-		delay = 400000;
-		while(delay--){
-			;/* nop */
-		}
-	}
+	timer_mdelay(1000 * sec);
+}
+void tool_mdealy(int msec)
+{
+	timer_mdelay(msec);
+}
+void tool_udealy(int usec)
+{
+	timer_udelay(usec);
 }
 
 float tool_abs_f(float value)

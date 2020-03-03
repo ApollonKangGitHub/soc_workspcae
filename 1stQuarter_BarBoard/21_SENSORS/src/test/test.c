@@ -360,7 +360,7 @@ void test_relocation_greater_than_4k(void)
 		print_screen("\r\ngChar_A:%c(%d), gChar_B:%c(%d), &gChar_A:%x, &gChar_B:%x",
 			gChar_A, gChar_A, gChar_B, gChar_B, &gChar_A, &gChar_B);
 		gChar_A++;
-		tool_dealy(1);
+		tool_delay(1);
 	}
 }
 #endif /* TEST_OBJ_RELOCATION */
@@ -371,7 +371,7 @@ void test_thumb_instruction(void)
 {
 	print_screen("\r\n THUMB instruction test[%s-%s-%d]!", __FILE__, __FUNCTION__, __LINE__);
 	
-	tool_dealy(1);
+	tool_delay(1);
 	test_uart();
 }
 #endif	/* TEST_OBJ_THUMB_INSTRUCTION */
@@ -1229,14 +1229,14 @@ void test_lcd(void)
 
 	frameBuffer_clear();
 	print_screen_lcd(0,0,"\r\n bppType:%d, fb_base:%x, x_res:%d, y_res:%d", bppType, fb_base, x_res, y_res);
-	tool_dealy(2);
+	tool_delay(1);
 
 	/* 调色板测试（只有8bit用到了调色板） */
 	if (bpp_type_8bits == bppType) 
 	{
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n paletee test!");
-		tool_dealy(2);
+		tool_delay(1);
 
 		/* 轮训调色板部分颜色 */
 		x = 0; 
@@ -1305,7 +1305,7 @@ void test_lcd(void)
 			x += PALETEE_COLOR_WIDTH;
 		}
 
-		tool_dealy(2);
+		tool_delay(1);
 		frameBuffer_clear();
 	}
 	else
@@ -1313,7 +1313,7 @@ void test_lcd(void)
 		/* 真彩色测试 */
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n rgb888 true color test start.");
-		tool_dealy(2);
+		tool_delay(1);
 		
 		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x00FF0000);	/* 红 */
 		frameBuffer_fullScreen(RGB888_TRUE_COLOR | 0x0000FF00);	/* 绿 */
@@ -1327,7 +1327,7 @@ void test_lcd(void)
 	{
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n draw circle and annulus.");
-		tool_dealy(2);
+		tool_delay(1);
 
 		circle_center.x = radius;
 		circle_center.y = radius;
@@ -1359,7 +1359,7 @@ void test_lcd(void)
 	{
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n draw line.");
-		tool_dealy(2);
+		tool_delay(1);
 
 		start.x = 0;
 		start.y = 0;
@@ -1390,7 +1390,7 @@ void test_lcd(void)
 	{
 		frameBuffer_clear();
 		print_screen_lcd(0,0,"\r\n font write test start.");
-		tool_dealy(2);
+		tool_delay(1);
 		
 		frameBuffer_clear();
 		font_print_string(0, 0, paletee_256_type_Red_SYSTEM, \
@@ -1780,7 +1780,7 @@ void test_spi_oled_flash(void)
 	oled_init();
 	oled_print(0, 0, "I love C language and Embedded system.");
 
-	tool_dealy(1);
+	tool_delay(1);
 
 	/* SPI FLASH Read ID测试 */
 	oled_clear();
@@ -1930,8 +1930,18 @@ void test_photosensitive_resistor(void)
 		print_screen_lcd(0,32, "\r read ain1 :%d. photosensitive resistor Voltage: %d.%04d(V).   ", 
 			val, integralPart, fractionaPart);
 
-		tool_dealy(1);
+		tool_delay(1);
 	}
+}
+
+/* 高精度延时函数测试，可修改makefile的MMU_CACHE_ENABLE
+ * 来对比开启/关闭指令缓存和数据缓存delay函数的精度的变化
+ */
+void test_high_precision_delay(void)
+{
+	print_screen("\r\n delay 60s start!!");
+	tool_delay(60);
+	print_screen("\r\n delay 60s second end!!");
 }
 
 /* 传感器测试 */
@@ -1941,11 +1951,12 @@ void test_sensors(void)
 	BOOL isFirst = TRUE;
 	BOOL ismenuChoose = FALSE;
 
-	/* 初始化LCD和frmaeBuffer */
+	/* 初始化LCD和frmaeBuffer以及定时器 */
 	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
 	(void)lcd_common_enable(TRUE);
 	(void)frameBuffer_init();
-	
+	(void)timer_0_init();
+
 	while(TRUE) {
 		if (isFirst || ismenuChoose)
 		{
@@ -1957,7 +1968,8 @@ void test_sensors(void)
 			print_screen("\r\n -------------------------------------------------------------");
 			print_screen("\r\n [p]Photosensitive resistor test.");
 			print_screen("\r\n [i]Infrared sensor test.");
-			print_screen("\r\n [T]Temperature sensor test.");
+			print_screen("\r\n [t]Temperature sensor test.");
+			print_screen("\r\n [d]delay test.");
 			print_screen("\r\n [?]Menu info.");
 			print_screen("\r\n [h]Menu info.");
 			print_screen("\r\n [q]quit.");
@@ -1993,11 +2005,15 @@ void test_sensors(void)
 				//test_temperature_sensor();
 				break;
 
+			case 'd':
+			case 'D':
+				test_high_precision_delay();
+
 			case '?':
 			case 'h':
 				ismenuChoose = TRUE;
 				break;
-			
+
 			case 'q':
 			case 'Q':
 				return;
