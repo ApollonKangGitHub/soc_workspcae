@@ -3,5 +3,6 @@
 
 #include <tools.h>
 extern void photosensitive_init(void);
+extern void photosensitive_detach(void);
 
 #endif	/* _PHOTOSENSITIVE_H_ */

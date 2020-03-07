@@ -150,6 +150,7 @@ OBJS += ./src/e2prom/at24cxx.o
 OBJS += ./src/spi/spi_flash.o
 OBJS += ./src/oled/oled.o
 OBJS += ./src/sensors/photosensitive.o
+OBJS += ./src/sensors/dht11.o
 OBJS += ./src/test/test.o
 OBJS += ./soc_s3c2440.o
 

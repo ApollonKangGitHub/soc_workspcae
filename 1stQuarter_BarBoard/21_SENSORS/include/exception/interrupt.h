@@ -69,5 +69,7 @@ void * interrupt_irq_deal_start(void * pArgv);
 
 extern BOOL interrupt_register(interrupt_type_t type, interrupt_handle_hook interruptHandle);
 extern BOOL interrupt_unregister(interrupt_type_t type);
+extern void interrupt_sleep(char * modName);
+extern void interrupt_wake_up(char * modName);
 
 #endif /* _INTERRUPT_H_ */

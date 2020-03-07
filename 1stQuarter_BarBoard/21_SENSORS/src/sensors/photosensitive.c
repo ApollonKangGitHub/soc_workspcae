@@ -48,5 +48,14 @@ void photosensitive_init(void)
 	interrupt_register(interrupt_type_EXT_INT15, photosensitive_eint15_handle);
 }
 
+/* 光敏电阻处理detach */
+void photosensitive_detach(void)
+{
+	/* 配置GPG7为输入引脚/输出引脚,取消中断 */
+	GPGCONr &= ~(GPGCON_GPG7_CONF_BITSf);
+	GPGCONr |= (GPGCON_INPUT << GPGCON_GPG7_CONF_START);
+	interrupt_unregister(interrupt_type_EXT_INT15);
+}
+
 
 

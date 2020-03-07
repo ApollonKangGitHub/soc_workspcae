@@ -22,11 +22,11 @@ void tool_delay(int sec)
 {
 	timer_mdelay(1000 * sec);
 }
-void tool_mdealy(int msec)
+void tool_mdelay(int msec)
 {
 	timer_mdelay(msec);
 }
-void tool_udealy(int usec)
+void tool_udelay(int usec)
 {
 	timer_udelay(usec);
 }

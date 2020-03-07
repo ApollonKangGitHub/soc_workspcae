@@ -421,7 +421,7 @@ void * test_interrupt_handle_timer0(void * pArgv)
 }
 
 
-/* 按键中断初始化，全部设置为上升沿下降沿双触发 */
+/* 按键中断初始化，全部设置为下降沿触发 */
 void  test_interrupt_key_init(void)
 {
 	/* 
@@ -1889,6 +1889,14 @@ void test_cache_mmu(void)
 
 #ifdef TEST_OBJ_SENSORS
 
+#define TEST_OBJ_SENSORS_MENU_QUIT	(5)
+#define TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY (20)
+#define TEST_OBJ_SENSORS_MENU_SELECT(select, pos)	(((select) == (pos)) ? ('>') : (' '))
+volatile static BOOL gIsBreakCur = FALSE;
+volatile static BOOL gIsInit = TRUE;
+volatile static BOOL gDelayIsOver = TRUE;
+volatile static int gSelect = -1;
+
 /* 光敏电阻测试 */
 void test_photosensitive_resistor(void)
 {
@@ -1898,13 +1906,11 @@ void test_photosensitive_resistor(void)
 	uint32 fractionaPart = 0.0;
 	uint32 testTimes = 10000;
 
-	/* 初始化ADC、初始化光敏电阻控制信息 */
-	adc_init();
+	/* 初始化光敏电阻控制信息 */
 	photosensitive_init();
-	
-	print_screen_lcd(0,0, "test photosensitive resistor:\r\n");
+	print_screen_lcd(0,16*14, "test photosensitive resistor:\r\n");
 
-	while (TRUE)
+	while (!gIsBreakCur)
 	{
 		/* 读取ADC 0通道，即可调电阻电压 */
 		val = adc_read_channel(adc_mux_type_ain0);
@@ -1915,7 +1921,7 @@ void test_photosensitive_resistor(void)
 		fractionaPart = (uint32)((vol - integralPart) * 10000);
 
 		/* LCD打印 */
-		print_screen_lcd(0,16, "\r read ain0 :%d. Adjustable resistor Voltage: %d.%04d(V).    ", 
+		print_screen_lcd(0,16*15, "\r read ain0 :%d. Adjustable resistor Voltage: %d.%04d(V).    ", 
 			val, integralPart, fractionaPart);
 
 		/* 读取ADC 1通道，即光敏电阻电压 */
@@ -1927,10 +1933,38 @@ void test_photosensitive_resistor(void)
 		fractionaPart = (uint32)((vol - integralPart) * 10000);
 
 		/* LCD打印 */
-		print_screen_lcd(0,32, "\r read ain1 :%d. photosensitive resistor Voltage: %d.%04d(V).   ", 
+		print_screen_lcd(0,16*16, "\r read ain1 :%d. photosensitive resistor Voltage: %d.%04d(V).   ", 
 			val, integralPart, fractionaPart);
 
-		tool_delay(1);
+		tool_mdelay(100);
+	}
+
+	photosensitive_detach();
+}
+
+/* 温湿度传感器测试 */
+void test_infrared_sensor(void)
+{
+	int ret = OK;
+	uint32 humidity;
+	uint32 temperature;
+	(void)dht11_init();
+
+	while (!gIsBreakCur)
+	{
+		ret = dht11_read(&humidity, &temperature);
+		if (OK == ret)
+		{
+			print_screen_lcd(0,16*14, "\r current temperature is :%d.	   ", temperature);	
+			print_screen_lcd(0,32*15, "\r current humidity is    :%d.     ", humidity);	
+		}
+		else
+		{
+			/* 读取失败重新初始化 */
+			print_screen_lcd(0,16*14, "\r thd11 read temperature failed!  ");
+			print_screen_lcd(0,32*15, "\r thd11 read humidity failed!!    ");
+			(void)dht11_init();
+		}
 	}
 }
 
@@ -1940,91 +1974,108 @@ void test_photosensitive_resistor(void)
  */
 void test_high_precision_delay(void)
 {
-	print_screen("\r\n delay 60s start!!");
-	tool_delay(60);
-	print_screen("\r\n delay 60s second end!!");
+	gDelayIsOver = FALSE;
+	print_screen_lcd(0,16*14, "\r delay %d (s) running...", TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
+	tool_delay(TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
+	print_screen_lcd(0,16*15, "\r delay %d (s) end!!", TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
+	gDelayIsOver = TRUE;
 }
+
+void * sensors_menu_select(void * pArgv)
+{
+	if (gDelayIsOver)
+	{
+		frameBuffer_clear_lines(16*13, 16*17);
+		print_screen_lcd(0,16*14, "\r Interrupt old select is '%d'", gSelect);
+		gIsBreakCur = TRUE;
+		gSelect = (gSelect + 1) % TEST_OBJ_SENSORS_MENU_QUIT;
+		print_screen_lcd(0,16*14, "\r Interrupt new select is '%d'", gSelect);
+	}
+
+	return NULL;
+}
+
+/* Key2选择菜单，Key3退出菜单 */
+void * sensors_menu_quit(void * pArgv)
+{
+	gSelect = TEST_OBJ_SENSORS_MENU_QUIT;
+}
+
 
 /* 传感器测试 */
 void test_sensors(void)
 {
-	char selectOption = '\n';
-	BOOL isFirst = TRUE;
-	BOOL ismenuChoose = FALSE;
-
-	/* 初始化LCD和frmaeBuffer以及定时器 */
+	int selectOption = -1;
+	
+	/* 初始化LCD、frmaeBuffer、定时器、按键中断、ADC等 */
 	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
 	(void)lcd_common_enable(TRUE);
 	(void)frameBuffer_init();
 	(void)timer_0_init();
+	(void)adc_init();
+
+#ifdef TEST_OBJ_INTERRUPT
+	/* 注册菜单同步按键选择功能 */
+	test_interrupt_key_init();
+	interrupt_register(interrupt_type_EXT_INT2, sensors_menu_select);
+	interrupt_register(interrupt_type_EXT_INT11, sensors_menu_quit);
+#endif
 
 	while(TRUE) {
-		if (isFirst || ismenuChoose)
+		while (gIsBreakCur || gDelayIsOver || gIsInit)
 		{
-			isFirst = FALSE;
-			ismenuChoose = FALSE;
-
-			print_screen("\r\n -------------------------------------------------------------");
-			print_screen("\r\n SENSOR  TEST OBJ OPTIONALS");
-			print_screen("\r\n -------------------------------------------------------------");
-			print_screen("\r\n [p]Photosensitive resistor test.");
-			print_screen("\r\n [i]Infrared sensor test.");
-			print_screen("\r\n [t]Temperature sensor test.");
-			print_screen("\r\n [d]delay test.");
-			print_screen("\r\n [?]Menu info.");
-			print_screen("\r\n [h]Menu info.");
-			print_screen("\r\n [q]quit.");
-			print_screen("\r\n -------------------------------------------------------------");
-			
-			print_screen("\r\n Enter selection: ");
-			selectOption = tool_getChar();
-		}
-		else 
-		{
-			print_screen("\r\n Enter selection: ");
-			selectOption = tool_getChar();
+			selectOption = gSelect;
+			if (gIsBreakCur || gIsInit)
+			{
+				gIsBreakCur = FALSE;
+				gIsInit = FALSE;
+				break;
+			}
 		}
 
-		if ((selectOption >= 0x20) && (selectOption <= 0xFF))
-		{
-			print_screen("\r\n Select optional is [%c]", selectOption);
-		}
+		print_screen_lcd(0, 16*0, "\r ----------------------------------------------------------");
+		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS                                 ");
+		print_screen_lcd(0, 16*2, "\r ----------------------------------------------------------");
+		print_screen_lcd(0, 16*3, "\r %c[0]Photosensitive resistor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 0));
+		print_screen_lcd(0, 16*4, "\r %c[1]Temperature and humidity sensor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 1));
+		print_screen_lcd(0, 16*5, "\r %c[2]Temperature sensor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 2));
+		print_screen_lcd(0, 16*6, "\r %c[3]Infrared transmission detection test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 3));
+		print_screen_lcd(0, 16*7, "\r %c[4]High precision delay test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 4));
+		print_screen_lcd(0, 16*8, "\r %c[5]Quit.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 5));
+		print_screen_lcd(0, 16*9, "\r ----------------------------------------------------------");
+		print_screen_lcd(0, 16*10,"\r Press Key S2 select and Press Key3 quit.                  ");
+		print_screen_lcd(0, 16*11,"\r Select optional is [%d].                    ", selectOption);
+		print_screen_lcd(0, 16*12,"\r ----------------------------------------------------------");
+		frameBuffer_clear_lines(16*13, 16*17);
 		
 		switch (selectOption) {
-			case 'p':
-			case 'P':
+			case 0:
 				test_photosensitive_resistor();
 				break;
 
-			case 'i':
-			case 'I':
-				//test_infrared_sensor();
+			case 1:
+				test_infrared_sensor();
 				break;
 			
-			case 't':
-			case 'T':
+			case 2:
 				//test_temperature_sensor();
 				break;
-
-			case 'd':
-			case 'D':
-				test_high_precision_delay();
-
-			case '?':
-			case 'h':
-				ismenuChoose = TRUE;
+				
+			case 3:
+				//test_infrared_transmission_detection_test();
 				break;
 
-			case 'q':
-			case 'Q':
+			case 4:
+				test_high_precision_delay();
+				break;
+
+			case 5:
+				frameBuffer_clear();
+				print_screen_lcd(0, 0, "\r Test quit......");
 				return;
 
 			default:
-				if ((selectOption >= 0x20) && (selectOption <= 0xFF))
-				{
-					print_screen("\r\n Select optional [ %c ] is invalid!!!", 
-						selectOption, selectOption);
-				}
+				print_screen(0, 16*11, "\r Select optional [%d] is invalid!!!", selectOption);
 				break;
 		}
 	}

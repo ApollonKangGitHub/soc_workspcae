@@ -13,7 +13,10 @@
 #include <soc_s3c2440_public.h>
 
 #define INTERRUPT_TYPE_ENUM_STR(intName)	#intName
-
+static BOOL gIsInterruptHandle = FALSE;
+static uint32 gIntMask = 0x0;
+static uint32 gEintMask = 0x0;
+static uint32 gSubSrcMask = 0x0;
 static BOOL gInterruptDbg = TRUE;
 static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 	/* 外部中断 */
@@ -75,21 +78,28 @@ static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 	INTERRUPT_TYPE_ENUM_STR(MAX)
 };
 
+/* 中断处理函数，以及中断是被临时关闭 */
+typedef struct interrupt_handle_callback
+{
+	interrupt_handle_hook __fun__;
+	BOOL __sleep__;
+}interrupt_handle_callback_t;
+
 /* 中断测试驱动注册函数数组 */
-static interrupt_handle_hook gInterruptHandleDrv[interrupt_type_MAX] = {NULL};
+static interrupt_handle_callback_t gInterruptHandleDrv[interrupt_type_MAX] = {NULL, FALSE};
 static void * interrupt_handle(interrupt_type_t type, void * pArg)
 {
-	if (NULL != gInterruptHandleDrv[type])
+	if (NULL != gInterruptHandleDrv[type].__fun__)
 	{
-		return gInterruptHandleDrv[type](pArg);
+		return gInterruptHandleDrv[type].__fun__(pArg);
 	}
 	else 
 	{
-		print_screen("\r\nInvalid function for interrupt %s[%d]", 
-			gInterruptTypeStr[type], type);
-
+		print_screen("\r\nInvalid function for interrupt %s[%d]", gInterruptTypeStr[type], type);
 		return NULL;
 	}
+	
+	return NULL;
 }
 
 /*
@@ -962,7 +972,8 @@ BOOL interrupt_register
 		return FALSE;
 	}
 	
-	gInterruptHandleDrv[type] = interruptHandle;
+	gInterruptHandleDrv[type].__fun__ = interruptHandle;
+	gInterruptHandleDrv[type].__sleep__ = FALSE;
 	interrupt_controller_enable_set(type, TRUE);
 	print_screen("\r\n register interrupt %s success!", gInterruptTypeStr[type]);
 	return TRUE;
@@ -978,9 +989,53 @@ BOOL interrupt_unregister(interrupt_type_t type)
 	}
 	
 	interrupt_controller_enable_set(type, FALSE);
-	gInterruptHandleDrv[type] = NULL;
-	
+	gInterruptHandleDrv[type].__fun__ = NULL;
+	gInterruptHandleDrv[type].__sleep__ = FALSE;
+	print_screen("\r\n unregister interrupt %s success!", gInterruptTypeStr[type]);
 	return TRUE;
+}
+
+/* 
+ * 停止处理用户注册的中断IRQ,只是屏蔽中断,不解注册回调函数，
+ * 因此可以任意模块来调用，完毕后用interrupt_wake_up恢复即可
+ */
+void interrupt_sleep(char * modName)
+{	
+	interrupt_type_t type = interrupt_type_EXT_INT0;
+
+	/* 等待当前中断处理完成屏蔽中断 */
+	while (gIsInterruptHandle);
+	print_screen("\r\n---------------------------------------------------------------------");
+	/* 屏蔽当前注册了的所有中断（裸板程序不考虑数据安全性问题） */
+	while (type < interrupt_type_MAX) {
+		if (gInterruptHandleDrv[type].__fun__ && !gInterruptHandleDrv[type].__sleep__)
+		{
+			gInterruptHandleDrv[type].__sleep__ = TRUE;
+			interrupt_controller_enable_set(type, FALSE);
+			print_screen("\r\n interrut '%s' Sleep due to module '%s'", gInterruptTypeStr[type], modName);
+		}
+		type++;
+	}
+	print_screen("\r\n---------------------------------------------------------------------");
+}
+
+/* 唤醒处理用户注册的中断IRQ */
+void interrupt_wake_up(char * modName)
+{
+	interrupt_type_t type = interrupt_type_EXT_INT0;
+
+	/* 唤醒当前注册了的所有睡眠状态的中断（裸板程序不考虑数据安全性问题） */
+	print_screen("\r\n---------------------------------------------------------------------");
+	while (type < interrupt_type_MAX) {
+		if (gInterruptHandleDrv[type].__fun__ && gInterruptHandleDrv[type].__sleep__)
+		{
+			gInterruptHandleDrv[type].__sleep__ = FALSE;
+			interrupt_controller_enable_set(type, TRUE);
+			print_screen("\r\n interrut '%s' wake up by module '%s'", gInterruptTypeStr[type], modName);
+		}
+		type++;
+	}
+	print_screen("\r\n---------------------------------------------------------------------");
 }
 
 /* IRQ异常中断识别处理入口 */
@@ -988,6 +1043,8 @@ void * interrupt_irq_deal_start(void * pArgv)
 {
 	interrupt_type_t intType;
 	void * intteruptRet = NULL;
+	
+	gIsInterruptHandle = TRUE;
 	
 	/* 分辨中断源 */
 	(void)interrupt_status_get(interrupt_type_MAX, &intType);
@@ -1000,6 +1057,8 @@ void * interrupt_irq_deal_start(void * pArgv)
 
 	/* 清除中断 */
 	(void)interrupt_status_clear(intType);
+
+	gIsInterruptHandle = FALSE;
 
 	return intteruptRet;
 }

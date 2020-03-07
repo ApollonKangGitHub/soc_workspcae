@@ -95,14 +95,14 @@ void frameBuffer_set_point
 	}
 }
 
-/* 全屏指定颜色 */
-void frameBuffer_fullScreen(paletee_256_type_t color)
+/* 清除指定范围 */
+void frameBuffer_clear_range(int startLine, int endLine, paletee_256_type_t color)
 {
 	uint32 pixelBase;
 	int x, y;
 
 	pixelBase = gFb_LcdPara.fb_base;
-	for (y = 0; y < gFb_LcdPara.y_res; y++)
+	for (y = startLine; (y < gFb_LcdPara.y_res) && (y < endLine); y++)
 	{
 		for (x = 0; x < gFb_LcdPara.x_res; x++)
 		{
@@ -122,7 +122,13 @@ void frameBuffer_fullScreen(paletee_256_type_t color)
 					break;
 			}
 		}
-	}
+	}	
+}
+
+/* 全屏指定颜色 */
+void frameBuffer_fullScreen(paletee_256_type_t color)
+{
+	frameBuffer_clear_range(0, gFb_LcdPara.y_res ,color);
 }
 
 /* 清屏 */
@@ -132,6 +138,11 @@ void frameBuffer_clear(void)
 	frameBuffer_fullScreen(paletee_256_type_Black_SYSTEM);
 }
 
+/* 清除指定多行 */
+void frameBuffer_clear_lines(int startLine, int endLine)
+{
+	frameBuffer_clear_range(startLine, endLine, paletee_256_type_Black_SYSTEM);
+}
 
 /* 初始化frameBuffer像素、分辨率参数 */
 int frameBuffer_init(void)
