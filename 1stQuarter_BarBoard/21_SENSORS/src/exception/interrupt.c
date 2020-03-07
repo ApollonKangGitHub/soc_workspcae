@@ -17,7 +17,7 @@ static BOOL gIsInterruptHandle = FALSE;
 static uint32 gIntMask = 0x0;
 static uint32 gEintMask = 0x0;
 static uint32 gSubSrcMask = 0x0;
-static BOOL gInterruptDbg = TRUE;
+static BOOL gInterruptDbg = FALSE;
 static char * gInterruptTypeStr[interrupt_type_MAX + 1] = {
 	/* 外部中断 */
 	INTERRUPT_TYPE_ENUM_STR(EXT_INT0),
@@ -1005,18 +1005,18 @@ void interrupt_sleep(char * modName)
 
 	/* 等待当前中断处理完成屏蔽中断 */
 	while (gIsInterruptHandle);
-	print_screen("\r\n---------------------------------------------------------------------");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n---------------------------------------------------------------------");
 	/* 屏蔽当前注册了的所有中断（裸板程序不考虑数据安全性问题） */
 	while (type < interrupt_type_MAX) {
 		if (gInterruptHandleDrv[type].__fun__ && !gInterruptHandleDrv[type].__sleep__)
 		{
 			gInterruptHandleDrv[type].__sleep__ = TRUE;
 			interrupt_controller_enable_set(type, FALSE);
-			print_screen("\r\n interrut '%s' Sleep due to module '%s'", gInterruptTypeStr[type], modName);
+			SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n interrut '%s' Sleep due to module '%s'", gInterruptTypeStr[type], modName);
 		}
 		type++;
 	}
-	print_screen("\r\n---------------------------------------------------------------------");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n---------------------------------------------------------------------");
 }
 
 /* 唤醒处理用户注册的中断IRQ */
@@ -1025,17 +1025,17 @@ void interrupt_wake_up(char * modName)
 	interrupt_type_t type = interrupt_type_EXT_INT0;
 
 	/* 唤醒当前注册了的所有睡眠状态的中断（裸板程序不考虑数据安全性问题） */
-	print_screen("\r\n---------------------------------------------------------------------");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n---------------------------------------------------------------------");
 	while (type < interrupt_type_MAX) {
 		if (gInterruptHandleDrv[type].__fun__ && gInterruptHandleDrv[type].__sleep__)
 		{
 			gInterruptHandleDrv[type].__sleep__ = FALSE;
 			interrupt_controller_enable_set(type, TRUE);
-			print_screen("\r\n interrut '%s' wake up by module '%s'", gInterruptTypeStr[type], modName);
+			SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n interrut '%s' wake up by module '%s'", gInterruptTypeStr[type], modName);
 		}
 		type++;
 	}
-	print_screen("\r\n---------------------------------------------------------------------");
+	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n---------------------------------------------------------------------");
 }
 
 /* IRQ异常中断识别处理入口 */

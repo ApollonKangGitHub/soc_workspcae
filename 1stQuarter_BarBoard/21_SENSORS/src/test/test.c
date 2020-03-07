@@ -1948,21 +1948,33 @@ void test_infrared_sensor(void)
 	int ret = OK;
 	uint32 humidity;
 	uint32 temperature;
+	led_info ledArr[3] = {
+		{led_num_d10, led_light_off}, 
+		{led_num_d11, led_light_on}, 
+		{led_num_d12, led_light_off}
+	};
+
 	(void)dht11_init();
 
 	while (!gIsBreakCur)
 	{
+		/* 指示一轮完成状态变化 */
+		ledArr[0].ledLight = (ledArr[0].ledLight+1) % led_light_max;
+		ledArr[1].ledLight = (ledArr[1].ledLight+1) % led_light_max;
+		ledArr[2].ledLight = (ledArr[2].ledLight+1) % led_light_max;
+		led_light_all(3, ledArr);
+	
 		ret = dht11_read(&humidity, &temperature);
 		if (OK == ret)
 		{
-			print_screen_lcd(0,16*14, "\r current temperature is :%d.	   ", temperature);	
-			print_screen_lcd(0,32*15, "\r current humidity is    :%d.     ", humidity);	
+			print_screen_lcd(0,16*14, "\r current temperature is :%d.     ", temperature);	
+			print_screen_lcd(0,16*15, "\r current humidity is    :%d.     ", humidity);	
 		}
 		else
 		{
 			/* 读取失败重新初始化 */
 			print_screen_lcd(0,16*14, "\r thd11 read temperature failed!  ");
-			print_screen_lcd(0,32*15, "\r thd11 read humidity failed!!    ");
+			print_screen_lcd(0,16*15, "\r thd11 read humidity failed!!    ");
 			(void)dht11_init();
 		}
 	}
@@ -1981,7 +1993,7 @@ void test_high_precision_delay(void)
 	gDelayIsOver = TRUE;
 }
 
-void * sensors_menu_select(void * pArgv)
+void * sensors_menu_select_key_s3(void * pArgv)
 {
 	if (gDelayIsOver)
 	{
@@ -1996,7 +2008,7 @@ void * sensors_menu_select(void * pArgv)
 }
 
 /* Key2选择菜单，Key3退出菜单 */
-void * sensors_menu_quit(void * pArgv)
+void * sensors_menu_quit_key_s4(void * pArgv)
 {
 	gSelect = TEST_OBJ_SENSORS_MENU_QUIT;
 }
@@ -2006,20 +2018,29 @@ void * sensors_menu_quit(void * pArgv)
 void test_sensors(void)
 {
 	int selectOption = -1;
+	led_info ledArr[3] = {
+		{led_num_d10, led_light_off}, 
+		{led_num_d11, led_light_on}, 
+		{led_num_d12, led_light_off}
+	};
 	
 	/* 初始化LCD、frmaeBuffer、定时器、按键中断、ADC等 */
 	(void)lcd_common_init(lcd_type_4_3, lcd_controller_soc_s3c2440);
-	(void)lcd_common_enable(TRUE);
-	(void)frameBuffer_init();
-	(void)timer_0_init();
-	(void)adc_init();
-
+	(void)lcd_common_enable(TRUE);	
+	(void)frameBuffer_init();	/* LCD显示需要 */
+	(void)timer_0_init();		/* delay函数需要 */
+	(void)adc_init();			/* 传感器ADC转换 */
+	(void)led_init();			/* 状态指示灯 */
+	
 #ifdef TEST_OBJ_INTERRUPT
 	/* 注册菜单同步按键选择功能 */
 	test_interrupt_key_init();
-	interrupt_register(interrupt_type_EXT_INT2, sensors_menu_select);
-	interrupt_register(interrupt_type_EXT_INT11, sensors_menu_quit);
+	interrupt_register(interrupt_type_EXT_INT0, test_interrupt_handle_key_s2);
+	interrupt_register(interrupt_type_EXT_INT2, sensors_menu_select_key_s3);
+	interrupt_register(interrupt_type_EXT_INT11, sensors_menu_quit_key_s4);
 #endif
+
+	led_light_all(3, ledArr);
 
 	while(TRUE) {
 		while (gIsBreakCur || gDelayIsOver || gIsInit)

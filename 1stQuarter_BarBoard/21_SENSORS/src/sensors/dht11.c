@@ -42,17 +42,7 @@ static void dht11_gpio_data_set(BOOL high)
 }
 
 /* 读取数据 */
-static int dht11_gpio_data_get(void)
-{
-	uint32 data = GPGDATr;
-	SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\n GPGDATr:%x", data);
-	if (data & GPGDAT_GPG5_DATA_BITSf) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-}
+#define DTH11_GPIO_DATA_GET()	((GPGDATr & GPGDAT_GPG5_DATA_BITSf) ? (1) : (0))
 
 /* 等待高低电平指定超时时间 */
 static int dht11_wait_for_val(int val, int timeout_us)
@@ -60,17 +50,14 @@ static int dht11_wait_for_val(int val, int timeout_us)
 	volatile int wait = 0;
 	volatile int timeout = timeout_us;
 	
-	while (timeout > 0)
+	while (--timeout)
 	{
-		wait = dht11_gpio_data_get();
+		wait = DTH11_GPIO_DATA_GET();
 		if (val == wait) {
-			print_screen("\r\n val:%d, wait:%d, timeout:%d", val, wait, timeout);
 			return OK;
 		}
-		tool_udelay(10);
-		timeout -= 10;
+		tool_udelay(1);
 	}
-	print_screen("\r\nval:%d, wait:%d, timeout:%d", val, wait, timeout);
 	return ERROR;
 }
 
@@ -89,7 +76,7 @@ static int dht11_wait_ack(void)
 	tool_udelay(60);
 
 	/* 读取引脚电平,低为等到ACK */
-	return dht11_gpio_data_get();
+	return DTH11_GPIO_DATA_GET();
 }
 
 /* 读取一个字节 */
@@ -97,19 +84,18 @@ static int dht11_recv_byte(void)
 {
 	int i;
 	int data = 0;
-	
+
 	for (i = 0; i < 8; i++)
 	{
-		SYS_DEBUG_PRINT(SOC_DBG_NORMAL, "\r\ndht11 wait for high data bit %d!\n\r", i);
 		if (ERROR == dht11_wait_for_val(1, 1000))
 		{
 			print_screen("\r\ndht11 wait for high data err[i=%d]!\n\r", i);
 			return ERROR;
 		}
-		
+	
 		tool_udelay(40);
 		data <<= 1;
-		if (1 == dht11_gpio_data_get()) {
+		if (1 == DTH11_GPIO_DATA_GET()) {
 			data |= 1;
 		}
 		
@@ -123,7 +109,7 @@ static int dht11_recv_byte(void)
 	return data;
 }
 
-int dht11_read(uint32 * humidity, uint32 * temperature )
+int dht11_read(uint32 * humidity, uint32 * temperature)
 {
 	uint8 humHigh, humLow;
 	uint8 tempHigh, tempLow;
@@ -170,7 +156,7 @@ int dht11_read(uint32 * humidity, uint32 * temperature )
 	{
 		*humidity = humHigh;
 		*temperature = tempHigh;
-		tool_delay(2000);
+		tool_mdelay(1500);
 	}
 	else
 	{
@@ -193,7 +179,7 @@ void dht11_init(void)
 	interrupt_sleep(DHT11_INTERRUPT_SLEEP_CALL);
 	dht11_gpio_data_cfg_pin_output();
 	dht11_gpio_data_set(1);
-	tool_mdelay(2000);
+	tool_mdelay(1500);
 	interrupt_wake_up(DHT11_INTERRUPT_SLEEP_CALL);
 }
 

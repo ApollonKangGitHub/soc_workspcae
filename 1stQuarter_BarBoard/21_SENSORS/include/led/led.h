@@ -24,8 +24,28 @@
 #define DELAY_TIME_MAX			(500000)
 #endif
 
+typedef enum {
+	led_num_d10,
+	led_num_d11,
+	led_num_d12,
+	led_num_max
+}led_num_t;
+
+typedef enum {
+	led_light_off,
+	led_light_on,
+	led_light_max
+}led_light_t;
+
+typedef struct {
+	led_num_t ledNum;
+	led_light_t ledLight;
+}led_info; 
+
 void led_delay(volatile int time);
 extern void led_init();
 extern void led_running();
+extern void led_light(led_num_t num, led_light_t light);
+extern void led_light_all(int num, led_info * ledArr);
 
 #endif

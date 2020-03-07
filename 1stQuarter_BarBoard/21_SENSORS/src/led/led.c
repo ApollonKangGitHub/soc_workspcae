@@ -82,3 +82,33 @@ void led_running(uint32 led_cycle_times)
 		}
 	}
 }
+
+/* 点指定灯 */
+void led_light(led_num_t num, led_light_t light)
+{
+	BOOL isLight = (light == led_light_on) ? FALSE : TRUE;
+	switch (num)
+	{
+		case led_num_d10:
+			SOC_S3C2440_REG_BIT_SET(GPFDATr, 4, isLight);
+			break;
+		case led_num_d11:
+			SOC_S3C2440_REG_BIT_SET(GPFDATr, 5, isLight);
+			break;
+		case led_num_d12:
+			SOC_S3C2440_REG_BIT_SET(GPFDATr, 6, isLight);
+			break;
+		default:
+			break;
+	}
+}
+
+/* 点多个灯 */
+void led_light_all(int num, led_info * ledArr)
+{
+	int index = 0;
+	for (index = 0; index < num; index++)
+	{
+		led_light(ledArr[index].ledNum, ledArr[index].ledLight);
+	}
+}
