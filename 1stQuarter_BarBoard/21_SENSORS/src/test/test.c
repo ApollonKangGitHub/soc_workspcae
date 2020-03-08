@@ -23,6 +23,8 @@
 #include <mmu.h>
 #include <photosensitive.h>
 #include <spi_flash.h>
+#include <dht11.h>
+#include <ds18b20.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -1943,7 +1945,7 @@ void test_photosensitive_resistor(void)
 }
 
 /* 温湿度传感器测试 */
-void test_infrared_sensor(void)
+void test_temperature_humidity_sensor(void)
 {
 	int ret = OK;
 	uint32 humidity;
@@ -1953,6 +1955,8 @@ void test_infrared_sensor(void)
 		{led_num_d11, led_light_on}, 
 		{led_num_d12, led_light_off}
 	};
+
+	print_screen_lcd(0, 16*13, "\rDHT11 init running..., Please wait!");
 
 	(void)dht11_init();
 
@@ -1978,6 +1982,79 @@ void test_infrared_sensor(void)
 			(void)dht11_init();
 		}
 	}
+}
+
+/* DS18b20温度传感器测试 */
+void test_temperature_sensor(void)
+{
+	double temperature = 0.0;
+	uint32 readLen = 0;
+	uint32 integralPart = 0;
+	uint32 fractionaPart = 0;
+	int index = 0;
+	int ret = OK;
+
+	print_screen_lcd(0, 16*13, "\rDS18B20 init running..., Please wait!");
+
+	ds18b20_init();
+
+	/* 读取ROM测试 */
+	readLen = sizeof(gDataBuf);
+	set_buffer(gDataBuf, 0, readLen);
+	ret = ds18b20_read_rom(gDataBuf, &readLen);
+	if (OK == ret)
+	{
+		print_screen_lcd(0, 16*14, "\rDS18B20 ROM[0~%d]:", readLen);
+		for (index = 0; index < readLen; index++)
+		{
+			print_screen_lcd((5 + index) * 32, 16*14, "%d", gDataBuf[index]);
+		}
+	}
+	else
+	{
+		print_screen_lcd(0,16*14, "\rRead ds18b20 rom failed!");
+	}
+	
+	/* 读取RAM测试 */
+	readLen = sizeof(gDataBuf);
+	set_buffer(gDataBuf, 0, readLen);
+	ret = ds18b20_read_ram(gDataBuf, &readLen);
+	if (OK == ret)
+	{
+		print_screen_lcd(0, 16*15, "\rDS18B20 RAM[0~%d]:", readLen);
+		for (index = 0; index < readLen; index++)
+		{
+			print_screen_lcd((5 + index) * 32, 16*15, "%d", gDataBuf[index]);
+		}
+	}
+	else
+	{
+		print_screen_lcd(0,16*15, "\rRead ds18b20 ram failed!");
+	}
+
+	/* 读温度测试 */
+	while (!gIsBreakCur)
+	{
+		if (OK == ds18b20_read_temperature(&temperature))
+		{
+			/* 整数和小数拆分 */
+			integralPart = (uint32)temperature;
+			fractionaPart = (uint32)((temperature - integralPart) * 10000);
+
+			/* 串口打印 */
+			print_screen_lcd(0,16*16, "\rTemperature:%d.%04d (^C).", integralPart, fractionaPart);			
+		}
+		else
+		{
+			print_screen_lcd(0,16*16, "\rTemperature read failed!!   ");	
+		}
+	}
+}
+
+/* 基于HS0038的NEC红外协议测试 */
+void test_infrared_nec_protocol_test(void)
+{
+
 }
 
 void * sensors_menu_select_key_s3(void * pArgv)
@@ -2067,9 +2144,9 @@ void test_sensors(void)
 		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS                                 ");
 		print_screen_lcd(0, 16*2, "\r ----------------------------------------------------------");
 		print_screen_lcd(0, 16*3, "\r %c[0]Photosensitive resistor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 0));
-		print_screen_lcd(0, 16*4, "\r %c[1]Temperature and humidity sensor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 1));
-		print_screen_lcd(0, 16*5, "\r %c[2]Temperature sensor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 2));
-		print_screen_lcd(0, 16*6, "\r %c[3]Infrared transmission detection test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 3));
+		print_screen_lcd(0, 16*4, "\r %c[1]Temperature and humidity sensor DHT11 test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 1));
+		print_screen_lcd(0, 16*5, "\r %c[2]Temperature sensor DS18B20 test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 2));
+		print_screen_lcd(0, 16*6, "\r %c[3]Infrared NEC protocol with sensor HS0038 test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 3));
 		print_screen_lcd(0, 16*7, "\r %c[4]High precision delay test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 4));
 		print_screen_lcd(0, 16*8, "\r %c[5]Quit.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 5));
 		print_screen_lcd(0, 16*9, "\r ----------------------------------------------------------");
@@ -2084,15 +2161,15 @@ void test_sensors(void)
 				break;
 
 			case 1:
-				test_infrared_sensor();
+				test_temperature_humidity_sensor();
 				break;
 			
 			case 2:
-				//test_temperature_sensor();
+				test_temperature_sensor();
 				break;
 				
 			case 3:
-				//test_infrared_transmission_detection_test();
+				test_infrared_nec_protocol_test();
 				break;
 
 			case 4:

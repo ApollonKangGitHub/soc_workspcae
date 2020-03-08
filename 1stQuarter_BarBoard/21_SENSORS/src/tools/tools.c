@@ -125,6 +125,25 @@ char * tool_itoa(uint32 value, char * str)
 	return str;
 }
 
+void *memcpy(void *dest, const void *src, int n)
+{
+	int index = 0;
+	uint8 * pSrc = (uint8*)src;
+	uint8 * pDest = (uint8*)dest;	
+	if ((NULL == dest) || (NULL == src))
+	{
+		return NULL;
+	}
+	
+	while (index < n)
+	{
+		pDest[index] = pSrc[index];
+		index++;
+	}
+
+	return dest;
+}
+
 int tool_strncmp(const char * s1, const char * s2, int len)
 {
 	int i = 0;

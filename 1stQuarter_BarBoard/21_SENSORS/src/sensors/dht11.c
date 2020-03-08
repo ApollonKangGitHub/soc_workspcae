@@ -2,8 +2,6 @@
 #include <log.h>
 #include <soc_s3c2440_public.h>
 
-#define DHT11_INTERRUPT_SLEEP_CALL	"dht11 read"
-
 /* 使用GPG5作用dht11的DATA引脚 */
 
 /* 控制GPIO读取DHT11的数据 
@@ -18,6 +16,10 @@
  *                 +8bit校验和
  */
 
+#define DHT11_INTERRUPT_SLEEP_CALL	"dht11 read"
+
+/* 读取数据 */
+#define DTH11_GPIO_DATA_GET()	((GPGDATr & GPGDAT_GPG5_DATA_BITSf) ? (1) : (0))
 
 /* GPIO基本操作 */
 static void dht11_gpio_data_cfg_pin_output(void)
@@ -40,9 +42,6 @@ static void dht11_gpio_data_set(BOOL high)
 	else
 		GPGDATr &= ~GPGDAT_GPG5_DATA_BITSf;
 }
-
-/* 读取数据 */
-#define DTH11_GPIO_DATA_GET()	((GPGDATr & GPGDAT_GPG5_DATA_BITSf) ? (1) : (0))
 
 /* 等待高低电平指定超时时间 */
 static int dht11_wait_for_val(int val, int timeout_us)
@@ -79,7 +78,7 @@ static int dht11_wait_ack(void)
 	return DTH11_GPIO_DATA_GET();
 }
 
-/* 读取一个字节 */
+/* 读取一个字节(1会维持高电平72us，0会维持高电平28~36us) */
 static int dht11_recv_byte(void)
 {
 	int i;
@@ -87,19 +86,20 @@ static int dht11_recv_byte(void)
 
 	for (i = 0; i < 8; i++)
 	{
-		if (ERROR == dht11_wait_for_val(1, 1000))
+		if (ERROR == dht11_wait_for_val(1, 500))
 		{
 			print_screen("\r\ndht11 wait for high data err[i=%d]!\n\r", i);
 			return ERROR;
 		}
-	
+		
+		/* 少于72us多于72-28=36us，所以这个延时范围能够检测出是1还是0 */
 		tool_udelay(40);
 		data <<= 1;
 		if (1 == DTH11_GPIO_DATA_GET()) {
 			data |= 1;
 		}
 		
-		if (ERROR == dht11_wait_for_val(0, 1000))
+		if (ERROR == dht11_wait_for_val(0, 500))
 		{
 			print_screen("\r\ndht11 wait for low data err[i=%d, data:%x]!\n\r", i, data);
 			return ERROR;
@@ -128,13 +128,13 @@ int dht11_read(uint32 * humidity, uint32 * temperature)
 	}
 
 	/* 等待高低电平的回应信号，ACK之后低电平至少80us，高电平至少80us */
-	if (OK != dht11_wait_for_val(1, 1000))
+	if (OK != dht11_wait_for_val(1, 500))
 	{
 		print_screen("dht11 wait for ack high error!\n\r");
 		goto ret_err_wake_up;
 	}
 
-	if (OK != dht11_wait_for_val(0, 1000))
+	if (OK != dht11_wait_for_val(0, 500))
 	{
 		print_screen("dht11 wait for ack low error!\n\r");
 		goto ret_err_wake_up;

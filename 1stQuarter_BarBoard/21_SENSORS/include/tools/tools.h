@@ -67,6 +67,8 @@ extern void tool_mdelay(int msec);
 extern void tool_udelay(int usec);
 extern float tool_abs_f(float value);
 extern BOOL tool_isBigEndOrder(void);
+/* 解决局部数据初始化编译问题 */
+extern void *memcpy(void *dest, const void *src, int n);	
 extern int tool_strnpy(char * dst, char * src, int len);
 extern int tool_strlen(const char * str);
 extern char * tool_itoa(uint32 value, char * str);
