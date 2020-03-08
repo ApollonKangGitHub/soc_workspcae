@@ -2106,6 +2106,8 @@ void test_high_precision_delay(void)
 /* 传感器测试 */
 void test_sensors(void)
 {
+	sys_time_t sysTime;
+	struct tm * curTime;
 	int selectOption = -1;
 	led_info ledArr[3] = {
 		{led_num_d10, led_light_off}, 
@@ -2140,8 +2142,13 @@ void test_sensors(void)
 			break;
 		}
 
+		set_buffer((uint8 *)&sysTime, 0, sizeof(sys_time_t));
+		timer_get_sys_time(&sysTime);
+		curTime = &sysTime.__tm__;
+		
 		print_screen_lcd(0, 16*0, "\r ----------------------------------------------------------");
-		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS                                 ");
+		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS [%d-%d-%d %d:%d:%d] ", 
+			curTime->tm_year, curTime->tm_mon, curTime->tm_mday, curTime->tm_hour, curTime->tm_min, curTime->tm_sec);
 		print_screen_lcd(0, 16*2, "\r ----------------------------------------------------------");
 		print_screen_lcd(0, 16*3, "\r %c[0]Photosensitive resistor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 0));
 		print_screen_lcd(0, 16*4, "\r %c[1]Temperature and humidity sensor DHT11 test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 1));

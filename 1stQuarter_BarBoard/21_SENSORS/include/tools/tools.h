@@ -27,6 +27,7 @@
 #define TOOL_MAX_INT_STR_LEN		(11)
 
 typedef char * va_list;
+typedef unsigned long long uint64;
 typedef unsigned long uint32;
 typedef unsigned short uint16;
 typedef unsigned char uint8;

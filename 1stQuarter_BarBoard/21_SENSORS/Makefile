@@ -14,6 +14,10 @@ CC += -march=armv4t
 #指定连接库
 LIBPATH :=
 LIBPATH +=-lgcc -L/opt/FriendlyARM/toolschain/4.4.3/lib/gcc/arm-none-linux-gnueabi/4.4.3/
+#LIBPATH +=-fno-exceptions
+#LIBPATH +=-fno-unwind-tables
+#LIBPATH +=-fno-asynchronous-unwind-tables
+#LIBPATH +=-shared
 
 #直接-Tdata 0x30000000重定位到SDRAM是行不通的，
 #因为code段默认从0地址开始，data段和代码段之间就存在一大片未使用的地址

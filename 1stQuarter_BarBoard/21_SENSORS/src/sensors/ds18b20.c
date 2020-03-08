@@ -286,6 +286,8 @@ int ds18b20_read_ram(uint8 * ram, int * len)
 	{
 		ram[cnt] = ds18b20_read_byte();
 	}
+
+	/* 4、数据校验 */
 	
 	*len = cnt;
 	return OK;
