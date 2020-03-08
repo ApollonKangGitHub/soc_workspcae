@@ -25,6 +25,8 @@
 #include <spi_flash.h>
 #include <dht11.h>
 #include <ds18b20.h>
+#include <hs0038.h>
+#include <necDataQueue.h>
 #include <soc_s3c2440_init.h>
 #include <soc_s3c2440_public.h>
 
@@ -2054,7 +2056,32 @@ void test_temperature_sensor(void)
 /* 基于HS0038的NEC红外协议测试 */
 void test_infrared_nec_protocol_test(void)
 {
+	necReadRet_t ret = nec_read_ret_max;
+	uint8 necAddr = 0x0;
+	uint8 necData = 0x0;
+	char * necErrTypeStr[nec_read_ret_max] = {NEC_READ_RET_STR_ARR};
+	
+	hs0038_init();
+	necDataQUeue_clear_data();
 
+	while (!gIsBreakCur)
+	{
+		ret = hs0038_read_nec_data(&necAddr, &necData);
+		if (ret == nec_read_ret_ok)
+		{
+			print_screen(". read data : addr:%x-data:%x", necAddr, necData);
+		}
+		else if (ret == nec_read_ret_repl)
+		{
+			print_screen(". repl data : addr:%x-data:%x", necAddr, necData);
+		}
+		else
+		{
+			print_screen(". read nec data failed, return %s[%d]", necErrTypeStr[ret], ret);
+		}
+	}
+
+	hs0038_detach();
 }
 
 void * sensors_menu_select_key_s3(void * pArgv)
@@ -2147,7 +2174,7 @@ void test_sensors(void)
 		curTime = &sysTime.__tm__;
 		
 		print_screen_lcd(0, 16*0, "\r ----------------------------------------------------------");
-		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS [%d-%d-%d %d:%d:%d] ", 
+		print_screen_lcd(0, 16*1, "\r SENSOR TEST OBJ OPTIONALS [%d-%d-%d %d:%d:%d]             ", 
 			curTime->tm_year, curTime->tm_mon, curTime->tm_mday, curTime->tm_hour, curTime->tm_min, curTime->tm_sec);
 		print_screen_lcd(0, 16*2, "\r ----------------------------------------------------------");
 		print_screen_lcd(0, 16*3, "\r %c[0]Photosensitive resistor test.", TEST_OBJ_SENSORS_MENU_SELECT(selectOption, 0));
