@@ -1980,6 +1980,35 @@ void test_infrared_sensor(void)
 	}
 }
 
+void * sensors_menu_select_key_s3(void * pArgv)
+{
+	if (gDelayIsOver)
+	{
+		gIsBreakCur = TRUE;
+		gSelect = (gSelect + 1) % TEST_OBJ_SENSORS_MENU_QUIT;
+	}
+	else
+	{
+		print_screen_lcd(0,16*15, "\r high precision running..., please wait a monment!");
+	}
+
+	return NULL;
+}
+
+/* Key2选择菜单，Key3退出菜单 */
+void * sensors_menu_quit_key_s4(void * pArgv)
+{
+	if (gDelayIsOver)
+	{
+		gSelect = TEST_OBJ_SENSORS_MENU_QUIT;
+		gIsBreakCur = TRUE;
+	}
+	else
+	{
+		print_screen_lcd(0,16*15, "\r high precision running..., please wait a monment!");
+	}
+}
+
 /* 高精度延时函数测试，可修改makefile的MMU_CACHE_ENABLE
  * 来对比开启/关闭指令缓存和数据缓存delay函数的精度的变化
  * 试着看了下，差别不是特别大，可能是因为delay的结构比较简单数据量和指令量都比较小
@@ -1989,30 +2018,13 @@ void test_high_precision_delay(void)
 	gDelayIsOver = FALSE;
 	print_screen_lcd(0,16*14, "\r delay %d (s) running...", TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
 	tool_delay(TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
+	frameBuffer_clear_lines(16*15, 16*15);
 	print_screen_lcd(0,16*15, "\r delay %d (s) end!!", TEST_OBJ_SENSORS_HIGH_PRECISION_DELAY);
 	gDelayIsOver = TRUE;
+	
+	/* 高精度延时完成自动触发下一个 */
+	sensors_menu_select_key_s3(NULL);
 }
-
-void * sensors_menu_select_key_s3(void * pArgv)
-{
-	if (gDelayIsOver)
-	{
-		frameBuffer_clear_lines(16*13, 16*17);
-		print_screen_lcd(0,16*14, "\r Interrupt old select is '%d'", gSelect);
-		gIsBreakCur = TRUE;
-		gSelect = (gSelect + 1) % TEST_OBJ_SENSORS_MENU_QUIT;
-		print_screen_lcd(0,16*14, "\r Interrupt new select is '%d'", gSelect);
-	}
-
-	return NULL;
-}
-
-/* Key2选择菜单，Key3退出菜单 */
-void * sensors_menu_quit_key_s4(void * pArgv)
-{
-	gSelect = TEST_OBJ_SENSORS_MENU_QUIT;
-}
-
 
 /* 传感器测试 */
 void test_sensors(void)
@@ -2043,15 +2055,12 @@ void test_sensors(void)
 	led_light_all(3, ledArr);
 
 	while(TRUE) {
-		while (gIsBreakCur || gDelayIsOver || gIsInit)
+		while (gIsBreakCur || gIsInit)
 		{
 			selectOption = gSelect;
-			if (gIsBreakCur || gIsInit)
-			{
-				gIsBreakCur = FALSE;
-				gIsInit = FALSE;
-				break;
-			}
+			gIsBreakCur = FALSE;
+			gIsInit = FALSE;
+			break;
 		}
 
 		print_screen_lcd(0, 16*0, "\r ----------------------------------------------------------");
