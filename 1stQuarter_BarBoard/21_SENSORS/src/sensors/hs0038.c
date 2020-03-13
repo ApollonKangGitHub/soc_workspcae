@@ -51,7 +51,7 @@ necReadRet_t hs0038_read_nec_data(uint8 * necAddr, uint8 * necData)
 	while (TRUE) 
 	{
 		/* 0、取NEC中断数据,不是低脉冲则认为是垃圾数据 */
-		if ((OK == necDataQUeue_get_data(&eventData)) && (0 == eventData.pol))
+		if ((OK == necDataQUeue_get_data_timeout(&eventData, 1000000)) && (0 == eventData.pol))
 		{
 			/* 1、判断是不是前导码的低脉冲 */
 			if (hs0038_data_check(HS0038_NEC_PREAMBLE_CODE_LOW, eventData.duration))
@@ -164,8 +164,7 @@ necReadRet_t hs0038_read_nec_data(uint8 * necAddr, uint8 * necData)
 		}
 		else
 		{	
-			/* 持续等待，不设置超时时间 */
-			continue;
+			return nec_read_ret_timeout;
 		}
 	}
 }

@@ -26,8 +26,6 @@ int sdram_init(SDRAM_CTRL_t choose)
 	 */
 	BANKSIZEr = 0xb1;
 
-	uart_putchar(choose + '0');
-
 	switch(choose){
 		case SOC_MEMCTRL_BANK6_SDRAM_0:
 			sdram0_init();
