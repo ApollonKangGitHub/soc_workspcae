@@ -47,6 +47,7 @@ int main (int argc, char *argv[])
 	bitmap_t bmp;
 	bitmap_t *b = &bmp;
 	uint16_t data_offset, n_colors;
+	size_t rv = 0;
 
 	if (argc < 2) {
 		fprintf (stderr, "Usage: %s file\n", argv[0]);
@@ -68,13 +69,13 @@ int main (int argc, char *argv[])
 	 * ignore the rest
 	 */
 	skip_bytes (fp, 8);
-	fread (&data_offset, sizeof (uint16_t), 1, fp);
+	rv |= fread (&data_offset, sizeof (uint16_t), 1, fp);
 	skip_bytes (fp, 6);
-	fread (&b->width,   sizeof (uint16_t), 1, fp);
+	rv |= fread (&b->width,   sizeof (uint16_t), 1, fp);
 	skip_bytes (fp, 2);
-	fread (&b->height,  sizeof (uint16_t), 1, fp);
+	rv |= fread (&b->height,  sizeof (uint16_t), 1, fp);
 	skip_bytes (fp, 22);
-	fread (&n_colors, sizeof (uint16_t), 1, fp);
+	rv |= fread (&n_colors, sizeof (uint16_t), 1, fp);
 	skip_bytes (fp, 6);
 
 	/*
